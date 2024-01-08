@@ -5,18 +5,18 @@
 #
 
 readonly mitamae_version="1.14.1"
-readonly mitamae_linux_sha256="dc5fe86e5a6ea46f8d1deedb812670871b9cd06547c7be456ebace73f83cbf7b"
+readonly mitamae_linux_x86_64_sha256="dc5fe86e5a6ea46f8d1deedb812670871b9cd06547c7be456ebace73f83cbf7b"
 
 readonly mitamae_cache="mitamae-${mitamae_version}"
 
 if ! [ -f "bin/${mitamae_cache}" ]; then
-  case "$(uname)" in
-    "Linux")
+  case "$(uname -sm)" in
+    "Linux x86_64")
       readonly mitamae_bin="mitamae-x86_64-linux"
-      readonly mitamae_sha256="$mitamae_linux_sha256"
+      readonly mitamae_sha256="$mitamae_linux_x86_64_sha256"
       ;;
     *)
-      echo "OSが想定外です uname: $(uname)"
+      echo "OSが想定外です uname: $(uname -sm)"
       exit 1
       ;;
   esac
