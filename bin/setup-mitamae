@@ -1,0 +1,45 @@
+#!/bin/sh
+
+#
+# 参考: https://github.com/k0kubun/dotfiles/blob/master/bin/setup
+#
+
+readonly mitamae_version="1.14.1"
+readonly mitamae_linux_sha256="dc5fe86e5a6ea46f8d1deedb812670871b9cd06547c7be456ebace73f83cbf7b"
+
+readonly mitamae_cache="mitamae-${mitamae_version}"
+
+if ! [ -f "bin/${mitamae_cache}" ]; then
+  case "$(uname)" in
+    "Linux")
+      readonly mitamae_bin="mitamae-x86_64-linux"
+      readonly mitamae_sha256="$mitamae_linux_sha256"
+      ;;
+    *)
+      echo "OSが想定外です uname: $(uname)"
+      exit 1
+      ;;
+  esac
+
+  # Donwload
+  curl -o "bin/${mitamae_bin}.tar.gz" -fL "https://github.com/itamae-kitchen/mitamae/releases/download/v${mitamae_version}/${mitamae_bin}.tar.gz"
+
+  # チェックサム検証
+  readonly sha256="$(/usr/bin/openssl dgst -sha256 "bin/${mitamae_bin}.tar.gz" | cut -d" " -f2)"
+  if [ "${mitamae_sha256}" != "${sha256}" ]; then
+    echo "checksum 検証に失敗"
+    echo "expected: ${mitamae_sha256}"
+    echo "actual: ${sha256}"
+    exit 1
+  fi
+
+  # 解凍
+  tar xvzf "bin/${mitamae_bin}.tar.gz"
+
+  rm "bin/${mitamae_bin}.tar.gz"
+  mv "${mitamae_bin}" "bin/${mitamae_cache}"
+  chmod +x "bin/${mitamae_cache}"
+fi
+
+ln -sf "${mitamae_cache}" bin/mitamae
+bin/mitamae version
