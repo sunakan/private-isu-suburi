@@ -15,6 +15,10 @@ check-ssh: tmp/servers ## CFnでEC2を設置して、sshできるか確認する
 clean: ## 掃除
 	@rm -rf tmp/*
 
+.PHONY: initialize-before
+initialize-before: ## beforeシリーズを初期化
+	@bash scripts/initialize-before.sh
+
 ################################################################################
 # 各Hostで入れておきたいツール群
 ################################################################################
