@@ -1,0 +1,9 @@
+cloudformation.yml
+
+# tmp/.gitkeep以外をignore
+!tmp/
+tmp/*
+!tmp/.gitkeep
+
+# .env にクレデンシャルを入れる
+.env
