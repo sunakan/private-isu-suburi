@@ -30,7 +30,7 @@ reset: ## app,commonを削除し、beforeシリーズからもってくる
 ################################################################################
 .PHONY: setup-tools
 setup-tools: tmp/servers ## 各Hostでツール群をインストール
-	@cat tmp/servers | xargs -I{} ssh {} "sudo apt-get update && sudo apt-get install -y psmisc tmux tree make jq neovim git graphviz"
+	@cat tmp/servers | xargs -I{} ssh {} "sudo apt-get update && sudo apt-get install -y psmisc tmux tree make jq neovim git graphviz prometheus-node-exporter"
 
 ################################################################################
 # private-isu
