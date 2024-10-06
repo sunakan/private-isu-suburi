@@ -14,6 +14,7 @@ echo '-------[ 🚀Deploy Nginx🚀 ]'
 cat tmp/app-servers | xargs -I{} rsync -az --rsync-path="sudo rsync" ./common/etc/nginx/nginx.conf {}:/etc/nginx/nginx.conf
 cat tmp/app-servers | xargs -I{} rsync -az --rsync-path="sudo rsync" ./common/etc/nginx/sites-available/isucon.conf {}:/etc/nginx/sites-available/isucon.conf
 cat tmp/app-servers | xargs -I{} ssh {} 'sudo nginx -t && sudo systemctl reload nginx'
+cat tmp/app-servers | xargs -I{} ssh {} 'sudo chmod +rx /var/log/nginx/ && sudo chmod +r /var/log/nginx/*log'
 
 #
 # MySQL
@@ -24,6 +25,7 @@ cat tmp/app-servers | xargs -I{} ssh {} "sudo mysql -e \"create user if not exis
 cat tmp/app-servers | xargs -I{} ssh {} "sudo mysql -e \"grant all privileges on isuconp.* to 'isucon'@'%';\""
 cat tmp/app-servers | xargs -I{} rsync -az --rsync-path="sudo rsync" ./common/etc/mysql/mysql.conf.d/mysqld.cnf {}:/etc/mysql/mysql.conf.d/mysqld.cnf
 cat tmp/app-servers | xargs -I{} ssh {} 'sudo systemctl restart mysql'
+cat tmp/app-servers | xargs -I{} ssh {} 'sudo chmod +rx /var/log/mysql/ && sudo chmod +r /var/log/mysql/*log'
 
 #
 # App
