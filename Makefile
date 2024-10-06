@@ -19,6 +19,12 @@ clean: ## 掃除
 initialize-before: ## beforeシリーズを初期化
 	@bash scripts/initialize-before.sh
 
+.PHONY: reset
+reset: ## app,commonを削除し、beforeシリーズからもってくる
+	@rm -rf app common
+	@cp -rf before-app app
+	@cp -rf before-common common
+
 ################################################################################
 # 各Hostで入れておきたいツール群
 ################################################################################
@@ -32,6 +38,10 @@ setup-tools: tmp/servers ## 各Hostでツール群をインストール
 .PHONY: enable-isu-go
 enable-isu-go: ## isu-rubyを止めて、isu-goを有効化
 	@cat tmp/app-servers | xargs -I{} bash -c 'echo "----[ {} ]" && ssh {} "sudo systemctl disable --now isu-ruby && sudo systemctl enable --now isu-go"'
+
+.PHONY: deploy
+deploy: ## デプロイ
+	@bash scripts/deploy.sh
 
 .PHONY: bench
 bench: ## benchmarkerを実行
