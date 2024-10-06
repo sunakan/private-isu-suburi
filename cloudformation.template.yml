@@ -63,6 +63,11 @@ Resources:
       ImageId: ami-0bed62bba4100a4b7
       SubnetId: !Ref MySubnet
       PrivateIpAddress: '192.168.1.10'
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 30
+            VolumeType: gp3
       SecurityGroupIds:
         - !Ref MySecurityGroup
       UserData:
@@ -84,6 +89,11 @@ Resources:
       ImageId: ami-034a457f6af55d65d
       SubnetId: !Ref MySubnet
       PrivateIpAddress: '192.168.1.20'
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 30
+            VolumeType: gp3
       SecurityGroupIds:
         - !Ref MySecurityGroup
       UserData:
