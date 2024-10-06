@@ -11,12 +11,27 @@ create-sshconfig-for-isucon: ## ~/.ssh/config-for-isucon.d/config 作成
 check-ssh: tmp/servers ## CFnでEC2を設置して、sshできるか確認する
 	@cat tmp/servers | xargs -I{} bash -c 'echo "----[ {} ]" && ssh {} "ls"'
 
+.PHONY: clean
+clean: ## 掃除
+	@rm -rf tmp/*
+
 ################################################################################
 # 各Hostで入れておきたいツール群
 ################################################################################
 .PHONY: setup-tools
 setup-tools: tmp/servers ## 各Hostでツール群をインストール
 	@cat tmp/servers | xargs -I{} ssh {} "sudo apt-get update && sudo apt-get install -y psmisc tmux tree make jq neovim git graphviz"
+
+################################################################################
+# private-isu
+################################################################################
+.PHONY: enable-isu-go
+enable-isu-go: ## isu-rubyを止めて、isu-goを有効化
+	@cat tmp/app-servers | xargs -I{} bash -c 'echo "----[ {} ]" && ssh {} "sudo systemctl disable --now isu-ruby && sudo systemctl enable --now isu-go"'
+
+.PHONY: bench
+bench: ## benchmarkerを実行
+	ssh isu-bench "private_isu.git/benchmarker/bin/benchmarker -u private_isu.git/benchmarker/userdata -t http://192.168.1.10/"
 
 ################################################################################
 # Utility-Command help
