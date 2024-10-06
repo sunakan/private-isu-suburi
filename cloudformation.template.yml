@@ -1,14 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: private-isu template
 
-Parameters:
-  KeyPairName:
-    Description: "Amazon EC2 Key Pair"
-    Type: AWS::EC2::KeyPair::KeyName
-  GitHubUsername:
-    Description: "GitHub Username for SSH public key"
-    Type: String
-
 Resources:
   VPC:
     Type: AWS::EC2::VPC
@@ -56,27 +48,19 @@ Resources:
       GroupDescription: Enable SSH, HTTP, HTTPS access
       VpcId: !Ref VPC
       SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: 0.0.0.0/0
         - IpProtocol: -1
           CidrIp: 192.168.0.0/16
+        - IpProtocol: -1
+          CidrIp: ${ENV_MY_IP}
 
   ServerInstance:
     Type: AWS::EC2::Instance
     Properties:
-      InstanceType: c6i.large
-      KeyName: !Ref KeyPairName
-      ImageId: ami-0d92a4724cae6f07b
+      Tags:
+        - Key: Name
+          Value: isu-1
+      InstanceType: c7g.large
+      ImageId: ami-0bed62bba4100a4b7
       SubnetId: !Ref MySubnet
       PrivateIpAddress: '192.168.1.10'
       SecurityGroupIds:
@@ -84,7 +68,7 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
-          GITHUB_USER=${GitHubUsername}
+          GITHUB_USER=${ENV_GITHUB_USERNAME}
           mkdir -p /home/isucon/.ssh
           curl -s https://github.com/$GITHUB_USER.keys >> /home/isucon/.ssh/authorized_keys
           chown -R isucon:isucon /home/isucon/.ssh
@@ -93,9 +77,11 @@ Resources:
   BenchmarkerInstance:
     Type: AWS::EC2::Instance
     Properties:
-      InstanceType: c6i.xlarge
-      KeyName: !Ref KeyPairName
-      ImageId: ami-0582a2a7fbe79a30d
+      Tags:
+        - Key: Name
+          Value: isu-bench
+      InstanceType: c7g.xlarge
+      ImageId: ami-034a457f6af55d65d
       SubnetId: !Ref MySubnet
       PrivateIpAddress: '192.168.1.20'
       SecurityGroupIds:
@@ -103,7 +89,7 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
-          GITHUB_USER=${GitHubUsername}
+          GITHUB_USER=${ENV_GITHUB_USERNAME}
           mkdir -p /home/isucon/.ssh
           curl -s https://github.com/$GITHUB_USER.keys >> /home/isucon/.ssh/authorized_keys
           chown -R isucon:isucon /home/isucon/.ssh
