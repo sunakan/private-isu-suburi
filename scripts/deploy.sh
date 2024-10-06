@@ -20,6 +20,8 @@ cat tmp/app-servers | xargs -I{} ssh {} 'sudo nginx -t && sudo systemctl reload 
 #
 echo ''
 echo '-------[ 🚀Deploy MySQL🚀 ]'
+cat tmp/app-servers | xargs -I{} ssh {} "sudo mysql -e \"create user if not exists 'isucon'@'%' identified by 'isucon'\""
+cat tmp/app-servers | xargs -I{} ssh {} "sudo mysql -e \"grant all privileges on isuconp.* to 'isucon'@'%';\""
 cat tmp/app-servers | xargs -I{} rsync -az --rsync-path="sudo rsync" ./common/etc/mysql/mysql.conf.d/mysqld.cnf {}:/etc/mysql/mysql.conf.d/mysqld.cnf
 cat tmp/app-servers | xargs -I{} ssh {} 'sudo systemctl restart mysql'
 
