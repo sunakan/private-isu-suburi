@@ -1,0 +1,10 @@
+global:
+  # scrape_interval: メトリクスの収集間隔(def: 1m)
+  scrape_interval: 3s
+  # evaluation_interval: ルールの評価間隔(def: 1m)
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ${ENV_MONITORING_TARGETS}
