@@ -23,6 +23,8 @@ make build-cfn
 
 make create-sshconfig-for-isucon
 make check-ssh
+make enable-isu-go
+make bench
 
 # 継続的改善
 make deploy
