@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -93,8 +94,9 @@ func dbInitialize() {
 
 func tryLogin(accountName, password string) *User {
 	u := User{}
-	err := db.Get(&u, "SELECT * FROM users WHERE account_name = ? AND del_flg = 0", accountName)
-	if err != nil {
+	if user := getUserByAccountName(accountName); user != nil && (*user).DelFlg == 0 {
+		u = *user
+	} else {
 		return nil
 	}
 
@@ -149,14 +151,11 @@ func getSessionUser(r *http.Request) User {
 		return User{}
 	}
 
-	u := User{}
-
-	err := db.Get(&u, "SELECT * FROM `users` WHERE `id` = ?", uid)
-	if err != nil {
+	if user := getUserById(uid.(int)); user != nil {
+		return *user
+	} else {
 		return User{}
 	}
-
-	return u
 }
 
 func getFlash(w http.ResponseWriter, r *http.Request, key string) string {
@@ -374,7 +373,7 @@ func postRegister(w http.ResponseWriter, r *http.Request) {
 		log.Print(err)
 		return
 	}
-	session.Values["user_id"] = uid
+	session.Values["user_id"] = int(uid)
 	session.Values["csrf_token"] = secureRandomStr(16)
 	session.Save(r, w)
 
@@ -438,10 +437,11 @@ func getAccountName(w http.ResponseWriter, r *http.Request) {
 	accountName := r.PathValue("accountName")
 	user := User{}
 
-	err := db.Get(&user, "SELECT * FROM `users` WHERE `account_name` = ? AND `del_flg` = 0", accountName)
-	if err != nil {
-		log.Print(err)
+	if u := getUserByAccountName(accountName); u == nil || (*u).DelFlg == 1 {
+		log.Print("getUserByAccountNameがnilを返したか、削除済みユーザーです")
 		return
+	} else {
+		user = *u
 	}
 
 	if user.ID == 0 {
@@ -451,7 +451,7 @@ func getAccountName(w http.ResponseWriter, r *http.Request) {
 
 	results := []Post{}
 
-	err = db.Select(&results, "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` WHERE `user_id` = ? ORDER BY `created_at` DESC", user.ID)
+	err := db.Select(&results, "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` WHERE `user_id` = ? ORDER BY `created_at` DESC", user.ID)
 	if err != nil {
 		log.Print(err)
 		return
@@ -733,12 +733,16 @@ func getAdminBanned(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// created_atの降順 == IDの降順
 	users := []User{}
-	err := db.Select(&users, "SELECT * FROM `users` WHERE `authority` = 0 AND `del_flg` = 0 ORDER BY `created_at` DESC")
-	if err != nil {
-		log.Print(err)
-		return
+	for item := range userCacheById.IterBuffered() {
+		if (*item.Val).DelFlg == 0 {
+			users = append(users, *item.Val)
+		}
 	}
+	slices.SortFunc(users, func(a, b User) int {
+		return b.ID - a.ID
+	})
 
 	template.Must(template.ParseFiles(
 		getTemplPath("layout.html"),
