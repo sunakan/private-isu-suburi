@@ -65,6 +65,10 @@ bench: ## benchmarkerを実行
 ################################################################################
 # kaizen
 ################################################################################
+.PHONY: scores
+scores: ## socre一覧
+	@git log --oneline | grep score
+
 .PHONY: kaizen-index
 kaizen-index: ## MySQLのindexによるkaizen
 	@bash common/kaizen-index.sh
