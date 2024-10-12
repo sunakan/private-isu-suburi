@@ -70,6 +70,14 @@ analyze: ## ダウンロードしたファイルを分析
 dl-and-analyze: ## 分析用ファイル群をダウンロードして、分析
 	@make download-files-for-analysis && echo '' && make analyze
 
+.PHONY: cat-alp-result
+cat-alp-result: ## alp結果を表示
+	@cat tmp/analysis/latest/analyzed-alp-nginx-access.log.*
+
+.PHONY: cat-pt-query-digest-result
+cat-pt-query-digest-result: ## pt-query-digest結果を表示
+	@cat tmp/analysis/latest/analyzed-pt-query-digest-slow.log.*
+
 ################################################################################
 # Utility-Command help
 ################################################################################
