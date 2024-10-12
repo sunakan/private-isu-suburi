@@ -29,4 +29,7 @@ make bench
 # 継続的改善
 make deploy
 make bench
+make dl-and-analyze
+make cat-alp-result
+make cat-pt-query-digest-result
 ```
