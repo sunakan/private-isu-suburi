@@ -56,6 +56,13 @@ bench: ## benchmarkerを実行
 	ssh isu-bench "private_isu.git/benchmarker/bin/benchmarker -u private_isu.git/benchmarker/userdata -t http://192.168.1.10/"
 
 ################################################################################
+# kaizen
+################################################################################
+.PHONY: download-files-for-analysis
+download-files-for-analysis: ## 分析用ファイル群をダウンロード
+	@bash scripts/download-files-for-analysis.sh
+
+################################################################################
 # Utility-Command help
 ################################################################################
 .DEFAULT_GOAL := help
