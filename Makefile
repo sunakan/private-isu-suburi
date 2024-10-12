@@ -40,6 +40,13 @@ setup-tools: tmp/servers ## 各Hostでツール群をインストール
 	@cat tmp/servers | xargs -I{} ssh {} "sudo apt-get update && sudo apt-get install -y psmisc tmux tree make jq neovim git graphviz prometheus-node-exporter"
 
 ################################################################################
+# MySQL
+################################################################################
+.PHONY: show-mysql-info
+show-mysql-info: ## MySQLの情報を表示
+	@bash scripts/show-mysql-info.sh
+
+################################################################################
 # private-isu
 ################################################################################
 .PHONY: enable-isu-go
