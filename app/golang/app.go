@@ -172,6 +172,11 @@ func getFlash(w http.ResponseWriter, r *http.Request, key string) string {
 	}
 }
 
+// 使われている箇所
+// - getIndex(/)
+// - getAccountName(/@{accountName:[a-zA-Z]+})
+// - getPosts()
+// - getPostsID(/posts/{id})
 func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, error) {
 	var posts []Post
 
@@ -264,6 +269,7 @@ func getTemplPath(filename string) string {
 func getInitialize(w http.ResponseWriter, r *http.Request) {
 	dbInitialize()
 	deleteImages()
+	initializeUserCache()
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -341,11 +347,9 @@ func postRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exists := 0
-	// ユーザーが存在しない場合はエラーになるのでエラーチェックはしない
-	db.Get(&exists, "SELECT 1 FROM users WHERE `account_name` = ?", accountName)
-
-	if exists == 1 {
+	// 既に居る場合は、OUT
+	// 居ない場合はnilが返るので、登録可能
+	if user := getUserByAccountName(accountName); user != nil {
 		session := getSession(r)
 		session.Values["notice"] = "アカウント名がすでに使われています"
 		session.Save(r, w)
@@ -354,8 +358,9 @@ func postRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	passwordHash := calculatePasshash(accountName, password)
 	query := "INSERT INTO `users` (`account_name`, `passhash`) VALUES (?,?)"
-	result, err := db.Exec(query, accountName, calculatePasshash(accountName, password))
+	result, err := db.Exec(query, accountName, passwordHash)
 	if err != nil {
 		log.Print(err)
 		return
@@ -370,6 +375,16 @@ func postRegister(w http.ResponseWriter, r *http.Request) {
 	session.Values["user_id"] = uid
 	session.Values["csrf_token"] = secureRandomStr(16)
 	session.Save(r, w)
+
+	// キャッシュに突っ込む
+	setUserCache(&User{
+		ID:          int(uid),
+		AccountName: accountName,
+		Passhash:    passwordHash,
+		Authority:   0,
+		DelFlg:      0,
+		CreatedAt:   time.Now(), // どうせ誤差なのでこちらで入れてしまう(SELECTし直すほうがもったいない)
+	})
 
 	http.Redirect(w, r, "/", http.StatusFound)
 }
@@ -758,8 +773,17 @@ func postAdminBanned(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, id := range r.Form["uid[]"] {
+	for _, uid := range r.Form["uid[]"] {
+		id, err := strconv.Atoi(uid)
+		if err != nil {
+			slog.Error("ユーザーIDが不正", err, "user_id", uid)
+			return
+		}
 		db.Exec(query, 1, id)
+		if user := getUserById(id); user != nil {
+			user.DelFlg = 1
+			setUserCache(user)
+		}
 	}
 
 	http.Redirect(w, r, "/admin/banned", http.StatusFound)

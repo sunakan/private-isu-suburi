@@ -6,6 +6,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
+
+	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
 func writeImage(postId int64, mime string, imgData []byte) error {
@@ -48,4 +52,47 @@ func deleteImages() {
 			}
 		}
 	}
+}
+
+var (
+	userCacheById          = cmap.New[*User]()
+	userCacheByAccountName = cmap.New[*User]()
+	userMutex              sync.Mutex
+	userId                 atomic.Int32
+)
+
+func initializeUserCache() {
+	var users []*User
+	if err := db.Select(&users, "SELECT * FROM users;"); err != nil {
+		slog.Error("ユーザー一覧取得に失敗", err)
+		return
+	}
+	userCacheById.Clear()
+	userCacheByAccountName.Clear()
+	for _, user := range users {
+		setUserCache(user)
+	}
+	// 1000とわかっているため
+	userId.Store(1000)
+}
+
+func getUserById(id int) *User {
+	if user, ok := userCacheById.Get(strconv.Itoa(id)); ok {
+		return user
+	} else {
+		return nil
+	}
+}
+
+func getUserByAccountName(accountName string) *User {
+	if user, ok := userCacheByAccountName.Get(accountName); ok {
+		return user
+	} else {
+		return nil
+	}
+}
+
+func setUserCache(user *User) {
+	userCacheById.Set(strconv.Itoa(user.ID), user)
+	userCacheByAccountName.Set(user.AccountName, user)
 }
