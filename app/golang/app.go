@@ -197,9 +197,10 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 		}
 
 		for i := 0; i < len(comments); i++ {
-			err := db.Get(&comments[i].User, "SELECT * FROM `users` WHERE `id` = ?", comments[i].UserID)
-			if err != nil {
-				return nil, err
+			if user := getUserById(comments[i].UserID); user != nil {
+				comments[i].User = *user
+			} else {
+				return nil, fmt.Errorf("ユーザーがキャッシュに無い: %d", comments[i].UserID)
 			}
 		}
 
@@ -210,9 +211,10 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 
 		p.Comments = comments
 
-		err = db.Get(&p.User, "SELECT * FROM `users` WHERE `id` = ?", p.UserID)
-		if err != nil {
-			return nil, err
+		if user := getUserById(p.UserID); user != nil {
+			p.User = *user
+		} else {
+			return nil, fmt.Errorf("ユーザーがキャッシュに無い: %d", p.UserID)
 		}
 
 		p.CSRFToken = csrfToken
