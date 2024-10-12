@@ -65,6 +65,10 @@ bench: ## benchmarkerを実行
 ################################################################################
 # kaizen
 ################################################################################
+.PHONY: kaizen-index
+kaizen-index: ## MySQLのindexによるkaizen
+	@bash common/kaizen-index.sh
+
 .PHONY: download-files-for-analysis
 download-files-for-analysis: ## 分析用ファイル群をダウンロード
 	@bash scripts/download-files-for-analysis.sh
