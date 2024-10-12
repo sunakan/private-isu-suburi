@@ -22,8 +22,10 @@ done < ${INPUT_FILE}
 #
 # MySQL
 #
+echo ''
 echo "-------[ 🧹Clean mysql logs ]"
 while read server; do
   ssh -n ${server} "sudo -u mysql mv /var/log/mysql/error.log /var/log/mysql/error.log.old && sudo -u mysql mv /var/log/mysql/mysql-slow.log /var/log/mysql/mysql-slow.log.old && sudo systemctl restart mysql"
+  ssh -n ${server} 'sudo chmod +rx /var/log/mysql/ && sudo chmod +r /var/log/mysql/*log'
   echo "${server}: Clean logs and restart mysql🚀"
 done < ${INPUT_FILE}
