@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -665,6 +666,10 @@ func postIndex(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Print(err)
 		return
+	}
+
+	if err := writeImage(pid, mime, filedata); err != nil {
+		slog.Error("画像書き出しに失敗", err, "post_id", pid, "mime", mime)
 	}
 
 	http.Redirect(w, r, "/posts/"+strconv.FormatInt(pid, 10), http.StatusFound)
