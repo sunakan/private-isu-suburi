@@ -69,6 +69,10 @@ bench: ## benchmarkerを実行
 kaizen-index: ## MySQLのindexによるkaizen
 	@bash common/kaizen-index.sh
 
+.PHONY: onetime-scripts
+onetime-scripts: ## onetime scriptを同期、実行
+	@bash scripts/onetime-scripts.sh
+
 .PHONY: download-files-for-analysis
 download-files-for-analysis: ## 分析用ファイル群をダウンロード
 	@bash scripts/download-files-for-analysis.sh
