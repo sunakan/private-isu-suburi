@@ -52,6 +52,7 @@ deploy: ## デプロイ
 
 .PHONY: bench
 bench: ## benchmarkerを実行
+	@bash scripts/clean-logs.sh
 	ssh isu-bench "private_isu.git/benchmarker/bin/benchmarker -u private_isu.git/benchmarker/userdata -t http://192.168.1.10/"
 
 ################################################################################
