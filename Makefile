@@ -62,6 +62,14 @@ bench: ## benchmarkerを実行
 download-files-for-analysis: ## 分析用ファイル群をダウンロード
 	@bash scripts/download-files-for-analysis.sh
 
+.PHONY: analyze
+analyze: ## ダウンロードしたファイルを分析
+	@bash scripts/analyze.sh
+
+.PHONY: dl-and-analyze
+dl-and-analyze: ## 分析用ファイル群をダウンロードして、分析
+	@make download-files-for-analysis && echo '' && make analyze
+
 ################################################################################
 # Utility-Command help
 ################################################################################
