@@ -399,7 +399,18 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 
 	results := []Post{}
 
-	err := db.Select(&results, "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` ORDER BY `id` DESC")
+	query := `
+select
+  posts.id
+  , posts.user_id
+  , posts.body
+  , posts.mime
+  , posts.created_at
+from posts
+join users on users.id = posts.user_id and users.del_flg = 0
+order by posts.id desc
+limit 20;`
+	err := db.Select(&results, query)
 	if err != nil {
 		log.Print(err)
 		return
@@ -446,7 +457,20 @@ func getAccountName(w http.ResponseWriter, r *http.Request) {
 
 	results := []Post{}
 
-	err := db.Select(&results, "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` WHERE `user_id` = ? ORDER BY `id` DESC", user.ID)
+	// 上部でDelFlgを確認しているので、delf_flg=0をjoinは不要
+	query := `
+select
+  posts.id
+  , posts.user_id
+  , posts.body
+  , posts.mime
+  , posts.created_at
+from posts
+where posts.user_id = ?
+order by posts.id desc
+limit 20;`
+
+	err := db.Select(&results, query, user.ID)
 	if err != nil {
 		log.Print(err)
 		return
@@ -534,7 +558,21 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	results := []Post{}
-	err = db.Select(&results, "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` WHERE `created_at` <= ? ORDER BY `id` DESC", t.Format(ISO8601Format))
+
+	query := `
+	select
+  posts.id
+  , posts.user_id
+  , posts.body
+  , posts.mime
+  , posts.created_at
+from posts
+join users on users.id = posts.user_id and users.del_flg = 0
+where posts.created_at <= ?
+order by posts.id desc
+limit 20;`
+
+	err = db.Select(&results, query, t.Format(ISO8601Format))
 	if err != nil {
 		log.Print(err)
 		return
@@ -570,7 +608,13 @@ func getPostsID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	results := []Post{}
-	err = db.Select(&results, "SELECT * FROM `posts` WHERE `id` = ?", pid)
+	query := `
+select
+  posts.*
+from posts
+join users on users.id = posts.user_id and users.del_flg = 0
+where posts.id = ?;`
+	err = db.Select(&results, query, pid)
 	if err != nil {
 		log.Print(err)
 		return
