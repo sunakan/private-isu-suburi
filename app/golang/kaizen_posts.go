@@ -15,7 +15,18 @@ var (
 
 func initializePostsCache() {
 	var posts []*Post
-	if err := db.Select(&posts, "SELECT id, user_id, body, mime, created_at FROM posts ORDER BY id;"); err != nil {
+	query := `
+SELECT
+  posts.id
+  , posts.user_id
+  , posts.body
+  , posts.mime
+  , posts.created_at
+FROM posts
+JOIN users ON users.id = posts.user_id AND users.del_flg = 0
+ORDER BY posts.id;
+`
+	if err := db.Select(&posts, query); err != nil {
 		slog.Error("投稿一覧取得に失敗", err)
 		return
 	}

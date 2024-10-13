@@ -464,23 +464,9 @@ func getAccountName(w http.ResponseWriter, r *http.Request) {
 
 	results := []Post{}
 
-	// 上部でDelFlgを確認しているので、delf_flg=0をjoinは不要
-	query := `
-select
-  posts.id
-  , posts.user_id
-  , posts.body
-  , posts.mime
-  , posts.created_at
-from posts
-where posts.user_id = ?
-order by posts.id desc
-limit 20;`
-
-	err := db.Select(&results, query, user.ID)
-	if err != nil {
-		log.Print(err)
-		return
+	posts20 := getPosts20ByUserId(user.ID)
+	for _, p := range posts20 {
+		results = append(results, *p)
 	}
 
 	posts, err := makePosts(results, getCSRFToken(r), false)
@@ -739,6 +725,14 @@ func postIndex(w http.ResponseWriter, r *http.Request) {
 	if err := writeImage(pid, mime, filedata); err != nil {
 		slog.Error("画像書き出しに失敗", err, "post_id", pid, "mime", mime)
 	}
+	setPostCache(&Post{
+		ID:        int(pid),
+		UserID:    me.ID,
+		Imgdata:   []byte{},
+		Body:      r.FormValue("body"),
+		Mime:      mime,
+		CreatedAt: time.Now(), // どうせ誤差
+	})
 
 	http.Redirect(w, r, "/posts/"+strconv.FormatInt(pid, 10), http.StatusFound)
 }
