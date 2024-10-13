@@ -179,10 +179,16 @@ func getFlash(w http.ResponseWriter, r *http.Request, key string) string {
 func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, error) {
 	var posts []Post
 
+	postCommentCounts, err := getPostCommentCounts(results)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, p := range results {
-		err := db.Get(&p.CommentCount, "SELECT COUNT(*) AS `count` FROM `comments` WHERE `post_id` = ?", p.ID)
-		if err != nil {
-			return nil, err
+		if postCommentCount, ok := postCommentCounts[p.ID]; ok {
+			p.CommentCount = postCommentCount
+		} else {
+			return nil, fmt.Errorf("コメント数が取得できませんでした: %d", p.ID)
 		}
 
 		query := "SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `id` ASC"
