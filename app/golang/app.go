@@ -272,6 +272,7 @@ func getInitialize(w http.ResponseWriter, r *http.Request) {
 	dbInitialize()
 	deleteImages()
 	initializeUserCache()
+	initializePostsCache()
 	w.WriteHeader(http.StatusOK)
 }
 
