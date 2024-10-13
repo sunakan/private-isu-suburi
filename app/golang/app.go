@@ -587,22 +587,12 @@ func getPostsID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	results := []Post{}
-	query := `
-select
-  posts.id
-  , posts.user_id
-  , posts.body
-  , posts.mime
-  , posts.created_at
-from posts
-join users on users.id = posts.user_id and users.del_flg = 0
-where posts.id = ?;`
-	err = db.Select(&results, query, pid)
-	if err != nil {
-		log.Print(err)
+	post := getPostById(pid)
+	if post == nil {
+		slog.Error("投稿がキャッシュに無い", err, "post_id", pid)
 		return
 	}
+	results := []Post{*post}
 
 	posts, err := makePosts(results, getCSRFToken(r), true)
 	if err != nil {
