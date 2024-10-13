@@ -9,6 +9,7 @@ import (
 
 var (
 	commentsCacheByPostId     = cmap.New[[]*Comment]()
+	commentsCacheByUserId     = cmap.New[[]*Comment]()
 	commentsCacheByPostUserId = cmap.New[[]*Comment]()
 )
 
@@ -42,6 +43,7 @@ ORDER BY comments.id ASC
 		return
 	}
 	commentsCacheByPostId.Clear()
+	commentsCacheByUserId.Clear()
 	commentsCacheByPostUserId.Clear()
 	for _, comment := range comments {
 		setCommentCache(comment)
@@ -65,6 +67,15 @@ func setCommentCache(commentWithPostUserId *CommentWithPostUserId) {
 		commentsCacheByPostId.Set(postId, []*Comment{comment})
 	}
 
+	// コメントしたUserId毎にコメントをキャッシュ
+	userId := strconv.Itoa(comment.UserID)
+	if comments, ok := commentsCacheByUserId.Get(userId); ok {
+		comments = append(comments, comment)
+		commentsCacheByUserId.Set(userId, comments)
+	} else {
+		commentsCacheByUserId.Set(userId, []*Comment{comment})
+	}
+
 	// PostしたUserId毎にコメントをキャッシュ
 	postUserId := strconv.Itoa(commentWithPostUserId.PostUserId)
 	if comments, ok := commentsCacheByPostUserId.Get(postUserId); ok {
@@ -77,6 +88,22 @@ func setCommentCache(commentWithPostUserId *CommentWithPostUserId) {
 
 func getCommentsByPostId(postId int) []*Comment {
 	if comments, ok := commentsCacheByPostId.Get(strconv.Itoa(postId)); ok {
+		return comments
+	} else {
+		return []*Comment{}
+	}
+}
+
+func getCommentsByUserId(userId int) []*Comment {
+	if comments, ok := commentsCacheByUserId.Get(strconv.Itoa(userId)); ok {
+		return comments
+	} else {
+		return []*Comment{}
+	}
+}
+
+func getCommentsByPostUserId(userId int) []*Comment {
+	if comments, ok := commentsCacheByPostUserId.Get(strconv.Itoa(userId)); ok {
 		return comments
 	} else {
 		return []*Comment{}
