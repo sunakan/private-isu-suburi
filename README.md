@@ -26,6 +26,9 @@ make check-ssh
 make enable-isu-go
 make bench
 
+# onetime
+make onetime-scripts
+
 # 継続的改善
 make deploy
 make bench
