@@ -405,22 +405,9 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 	me := getSessionUser(r)
 
 	results := []Post{}
-
-	query := `
-select
-  posts.id
-  , posts.user_id
-  , posts.body
-  , posts.mime
-  , posts.created_at
-from posts
-join users on users.id = posts.user_id and users.del_flg = 0
-order by posts.id desc
-limit 20;`
-	err := db.Select(&results, query)
-	if err != nil {
-		log.Print(err)
-		return
+	cloned := slices.Clone(latestPosts)
+	for _, p := range cloned {
+		results = append(results, *p)
 	}
 
 	posts, err := makePosts(results, getCSRFToken(r), false)
