@@ -179,26 +179,19 @@ func getFlash(w http.ResponseWriter, r *http.Request, key string) string {
 func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, error) {
 	var posts []Post
 
-	postCommentCounts, err := getPostCommentCounts(results)
-	if err != nil {
-		return nil, err
-	}
-
 	for _, p := range results {
-		if postCommentCount, ok := postCommentCounts[p.ID]; ok {
-			p.CommentCount = postCommentCount
-		} else {
-			return nil, fmt.Errorf("コメント数が取得できませんでした: %d", p.ID)
+		//if postCommentCount, ok := postCommentCounts[p.ID]; ok {
+		//	p.CommentCount = postCommentCount
+		//} else {
+		//	return nil, fmt.Errorf("コメント数が取得できませんでした: %d", p.ID)
+		//}
+		comments := []Comment{}
+		commentAll := getCommentsByPostId(p.ID)
+		for _, c := range commentAll {
+			comments = append(comments, *c)
 		}
-
-		query := "SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `id` ASC"
 		if !allComments {
-			query += " LIMIT 3"
-		}
-		var comments []Comment
-		err = db.Select(&comments, query, p.ID)
-		if err != nil {
-			return nil, err
+			comments = comments[:min(3, len(comments))]
 		}
 
 		for i := 0; i < len(comments); i++ {
@@ -273,6 +266,7 @@ func getInitialize(w http.ResponseWriter, r *http.Request) {
 	deleteImages()
 	initializeUserCache()
 	initializePostsCache()
+	initializeCommentsCache()
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -722,11 +716,27 @@ func postComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := "INSERT INTO `comments` (`post_id`, `user_id`, `comment`) VALUES (?,?,?)"
-	_, err = db.Exec(query, postID, me.ID, r.FormValue("comment"))
+	result, err := db.Exec(query, postID, me.ID, r.FormValue("comment"))
 	if err != nil {
 		log.Print(err)
 		return
 	}
+
+	cid, err := result.LastInsertId()
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	post := *(getPostById(postID))
+	setCommentCache(&CommentWithPostUserId{
+		ID:         int(cid),
+		PostID:     postID,
+		UserID:     me.ID,
+		Comment:    r.FormValue("comment"),
+		CreatedAt:  time.Now(), // どうせ誤差
+		PostUserId: post.UserID,
+	})
 
 	http.Redirect(w, r, fmt.Sprintf("/posts/%d", postID), http.StatusFound)
 }
