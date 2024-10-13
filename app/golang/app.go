@@ -539,23 +539,8 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 
 	results := []Post{}
 
-	query := `
-	select
-  posts.id
-  , posts.user_id
-  , posts.body
-  , posts.mime
-  , posts.created_at
-from posts
-join users on users.id = posts.user_id and users.del_flg = 0
-where posts.created_at <= ?
-order by posts.id desc
-limit 20;`
-
-	err = db.Select(&results, query, t.Format(ISO8601Format))
-	if err != nil {
-		log.Print(err)
-		return
+	for _, p := range getPosts20OnOrBefore(t) {
+		results = append(results, *p)
 	}
 
 	posts, err := makePosts(results, getCSRFToken(r), false)

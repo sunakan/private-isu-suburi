@@ -5,11 +5,13 @@ import (
 	"slices"
 	"strconv"
 	"sync"
+	"time"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
 var (
+	postsCache         = []*Post{}
 	postCacheById      = cmap.New[*Post]()
 	postsCacheByUserId = cmap.New[[]*Post]()
 	latestPosts        = []*Post{}
@@ -70,6 +72,10 @@ func setPostCache(post *Post) {
 	} else {
 		postsCacheByUserId.Set(userId, []*Post{post})
 	}
+	// 投稿をキャッシュ
+	cloned := slices.Clone(postsCache)
+	cloned = append(cloned, post)
+	postsCache = cloned
 }
 
 func getPostById(id int) *Post {
@@ -102,5 +108,24 @@ func getPosts20ByUserId(id int) []*Post {
 		}
 	} else {
 		return []*Post{}
+	}
+}
+
+// 指定した日時以前(含む)のmax20件のPost群
+func getPosts20OnOrBefore(t time.Time) []*Post {
+	posts := slices.Clone(postsCache)
+	for _, p := range posts {
+		if t.Compare(p.CreatedAt) > 0 {
+			break
+		}
+		posts = append(posts, p)
+	}
+	if 20 < len(posts) {
+		last20 := posts[len(posts)-20:]
+		slices.Reverse(last20)
+		return last20
+	} else {
+		slices.Reverse(posts)
+		return posts
 	}
 }
