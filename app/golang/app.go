@@ -725,14 +725,18 @@ func postIndex(w http.ResponseWriter, r *http.Request) {
 	if err := writeImage(pid, mime, filedata); err != nil {
 		slog.Error("画像書き出しに失敗", err, "post_id", pid, "mime", mime)
 	}
-	setPostCache(&Post{
+	post := &Post{
 		ID:        int(pid),
 		UserID:    me.ID,
 		Imgdata:   []byte{},
 		Body:      r.FormValue("body"),
 		Mime:      mime,
 		CreatedAt: time.Now(), // どうせ誤差
-	})
+	}
+	setPostCache(post)
+	cloned := slices.Clone(latestPosts)
+	cloned = append(cloned, post)[1:21]
+	latestPosts = cloned
 
 	http.Redirect(w, r, "/posts/"+strconv.FormatInt(pid, 10), http.StatusFound)
 }
