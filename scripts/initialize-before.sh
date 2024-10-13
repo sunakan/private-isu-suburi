@@ -1,6 +1,12 @@
 #!/bin/bash -eux
 
 #
+# limits.conf
+#
+mkdir -p before-common/etc/security/
+test -f before-common/etc/security/limits.conf || rsync -az isu-1:/etc/security/limits.conf before-common/etc/security/limits.conf
+
+#
 # env.sh
 #
 mkdir -p before-common/

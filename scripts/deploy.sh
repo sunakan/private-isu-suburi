@@ -1,8 +1,15 @@
 #!/bin/bash -eux
 
 #
+# limits.conf
+#
+echo '-------[ 🚀Deploy limits🚀 ]'
+cat tmp/servers | xargs  -I{} rsync -az --rsync-path="sudo rsync" ./common/etc/security/limits.conf {}:/etc/security/limits.conf
+
+#
 # env.sh
 #
+echo ''
 echo '-------[ 🚀Deploy env.sh🚀 ]'
 cat tmp/app-servers | xargs -I{} rsync -az ./common/env.sh {}:/home/isucon/env.sh
 
