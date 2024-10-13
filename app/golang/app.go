@@ -610,7 +610,11 @@ func getPostsID(w http.ResponseWriter, r *http.Request) {
 	results := []Post{}
 	query := `
 select
-  posts.*
+  posts.id
+  , posts.user_id
+  , posts.body
+  , posts.mime
+  , posts.created_at
 from posts
 join users on users.id = posts.user_id and users.del_flg = 0
 where posts.id = ?;`
