@@ -25,6 +25,14 @@ cat tmp/app-servers | xargs -I{} ssh {} 'sudo systemctl restart mysql'
 cat tmp/app-servers | xargs -I{} ssh {} 'sudo chmod +rx /var/log/mysql/ && sudo chmod +r /var/log/mysql/*log'
 
 #
+# isu-go.service
+#
+echo ''
+echo '-------[ 🚀Deploy isu-go.service🚀 ]'
+cat tmp/app-servers | xargs -I{} rsync -az ./common/etc/systemd/system/isu-go.service {}:/etc/systemd/system/isu-go.service
+cat tmp/app-servers | xargs -I{} ssh {} 'sudo chown root:root /etc/systemd/system/isu-go.service && sudo chmod 644 /etc/systemd/system/isu-go.service && sudo systemctl daemon-reload'
+
+#
 # App
 #
 echo ''

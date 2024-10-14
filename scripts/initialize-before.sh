@@ -32,6 +32,12 @@ mkdir -p before-app/golang
 test -f before-app/golang/go.mod || rsync -az --exclude='app' isu-1:/home/isucon/private_isu/webapp/golang/ before-app/golang/
 
 #
+# Systemd unit
+#
+mkdir -p before-common/etc/systemd/system
+test -f before-common/etc/systemd/system/isu-go.service || rsync -az isu-1:/etc/systemd/system/isu-go.service before-common/etc/systemd/system/isu-go.service
+
+#
 # tree
 #
 tree before-common/
