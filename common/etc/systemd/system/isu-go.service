@@ -3,14 +3,29 @@ Description=isu-go
 After=syslog.target
 
 [Service]
+# 標準出力と標準出力エラーをファイルに出力
+# うまく機能しない
+# 事前にmkdirして、権限も大丈夫
+# 削除した後、 `sudo systemctl restart isu-go` するとファイルは作成される
+# 追記がされない
+StandardOutput=append:/var/log/isu-go/stdout.log
+StandardError=append:/var/log/isu-go/stderr.log
+
+# サービスの作業ディレクトリ
 WorkingDirectory=/home/isucon/private_isu/webapp/golang
+# 環境変数を読み込むファイルの指定
 EnvironmentFile=/home/isucon/env.sh
+# 環境変数の指定
 Environment=RACK_ENV=production
+# pidファイル
 PIDFile=/home/isucon/private_isu/webapp/golang/server.pid
 
+# サービスを実行するユーザーとグループ
 User=isucon
 Group=isucon
+# サービスを起動するコマンドを指定
 ExecStart=/home/isucon/private_isu/webapp/golang/app -bind "127.0.0.1:8080"
+# サービスを停止するコマンド
 ExecStop=/bin/kill -s QUIT $MAINPID
 
 [Install]
