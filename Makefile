@@ -67,7 +67,7 @@ bench: ## benchmarkerを実行
 ################################################################################
 .PHONY: scores
 scores: ## socre一覧
-	@git log --oneline | grep score
+	@git log --oneline | grep score | head -n10
 
 .PHONY: kaizen-index
 kaizen-index: ## MySQLのindexによるkaizen
