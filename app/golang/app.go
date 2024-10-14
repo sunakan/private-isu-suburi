@@ -839,5 +839,7 @@ func main() {
 		http.FileServer(http.Dir("../public")).ServeHTTP(w, r)
 	})
 
-	log.Fatal(http.ListenAndServe(":8080", r))
+	// ドメインソケットで受ける
+	//log.Fatal(http.ListenAndServe(":8080", r))
+	listenUseDomainSocket(r)
 }

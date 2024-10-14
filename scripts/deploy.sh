@@ -14,16 +14,6 @@ echo '-------[ 🚀Deploy env.sh🚀 ]'
 cat tmp/app-servers | xargs -I{} rsync -az ./common/env.sh {}:/home/isucon/env.sh
 
 #
-# Nginx
-#
-echo ''
-echo '-------[ 🚀Deploy Nginx🚀 ]'
-cat tmp/app-servers | xargs -I{} rsync -az --rsync-path="sudo rsync" ./common/etc/nginx/nginx.conf {}:/etc/nginx/nginx.conf
-cat tmp/app-servers | xargs -I{} rsync -az --rsync-path="sudo rsync" ./common/etc/nginx/sites-available/isucon.conf {}:/etc/nginx/sites-available/isucon.conf
-cat tmp/app-servers | xargs -I{} ssh {} 'sudo nginx -t && sudo systemctl reload nginx'
-cat tmp/app-servers | xargs -I{} ssh {} 'sudo chmod +rx /var/log/nginx/ && sudo chmod +r /var/log/nginx/*log'
-
-#
 # MySQL
 #
 echo ''
@@ -40,4 +30,15 @@ cat tmp/app-servers | xargs -I{} ssh {} 'sudo chmod +rx /var/log/mysql/ && sudo 
 echo ''
 echo '-------[ 🚀Deploy App🚀 ]'
 cat tmp/app-servers | xargs -I{} rsync -az ./app/golang/ {}:/home/isucon/private_isu/webapp/golang/
+cat tmp/app-servers | xargs -I{} ssh {} 'sudo mkdir -p /var/run/isu-go && sudo chown -R isucon:isucon /var/run/isu-go && sudo chmod -R 0777 /var/run/isu-go'
 cat tmp/app-servers | xargs -I{} ssh {} 'export PATH=$PATH:/home/isucon/.local/go/bin && cd /home/isucon/private_isu/webapp/golang/ && make app && sudo systemctl restart isu-go'
+
+#
+# Nginx(ドメインソケットを利用するので、Nginxを後に起動)
+#
+echo ''
+echo '-------[ 🚀Deploy Nginx🚀 ]'
+cat tmp/app-servers | xargs -I{} rsync -az --rsync-path="sudo rsync" ./common/etc/nginx/nginx.conf {}:/etc/nginx/nginx.conf
+cat tmp/app-servers | xargs -I{} rsync -az --rsync-path="sudo rsync" ./common/etc/nginx/sites-available/isucon.conf {}:/etc/nginx/sites-available/isucon.conf
+cat tmp/app-servers | xargs -I{} ssh {} 'sudo nginx -t && sudo systemctl reload nginx'
+cat tmp/app-servers | xargs -I{} ssh {} 'sudo chmod +rx /var/log/nginx/ && sudo chmod +r /var/log/nginx/*log'
