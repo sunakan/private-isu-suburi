@@ -344,7 +344,11 @@ func postRegister(w http.ResponseWriter, r *http.Request) {
 
 	passwordHash := calculatePasshash(accountName, password)
 	query := "INSERT INTO `users` (`account_name`, `passhash`) VALUES (?,?)"
-	result, err := db.Exec(query, accountName, passwordHash)
+	result, err := db.Exec(
+		query,
+		accountName,
+		"", // dummy
+	)
 	if err != nil {
 		log.Print(err)
 		return
@@ -585,9 +589,9 @@ func postIndex(w http.ResponseWriter, r *http.Request) {
 	result, err := db.Exec(
 		query,
 		me.ID,
-		mime,
+		"", // dummy
 		[]byte{},
-		r.FormValue("body"),
+		"", // dummy
 	)
 	if err != nil {
 		log.Print(err)
@@ -638,7 +642,12 @@ func postComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := "INSERT INTO `comments` (`post_id`, `user_id`, `comment`) VALUES (?,?,?)"
-	result, err := db.Exec(query, postID, me.ID, r.FormValue("comment"))
+	result, err := db.Exec(
+		query,
+		postID,
+		me.ID,
+		"", // dummy
+	)
 	if err != nil {
 		log.Print(err)
 		return
