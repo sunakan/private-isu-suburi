@@ -3,7 +3,6 @@ package main
 import (
 	crand "crypto/rand"
 	"fmt"
-	"html/template"
 	"io"
 	"log"
 	"log/slog"
@@ -278,10 +277,7 @@ func getLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	template.Must(template.ParseFiles(
-		getTemplPath("layout.html"),
-		getTemplPath("login.html")),
-	).Execute(w, struct {
+	loginTemplate.Execute(w, struct {
 		Me    User
 		Flash string
 	}{me, getFlash(w, r, "notice")})
@@ -317,10 +313,7 @@ func getRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	template.Must(template.ParseFiles(
-		getTemplPath("layout.html"),
-		getTemplPath("register.html")),
-	).Execute(w, struct {
+	registerTemplate.Execute(w, struct {
 		Me    User
 		Flash string
 	}{User{}, getFlash(w, r, "notice")})
@@ -410,16 +403,7 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmap := template.FuncMap{
-		"imageURL": imageURL,
-	}
-
-	template.Must(template.New("layout.html").Funcs(fmap).ParseFiles(
-		getTemplPath("layout.html"),
-		getTemplPath("index.html"),
-		getTemplPath("posts.html"),
-		getTemplPath("post.html"),
-	)).Execute(w, struct {
+	getIndexTemplate.Execute(w, struct {
 		Posts     []Post
 		Me        User
 		CSRFToken string
@@ -461,15 +445,8 @@ func getAccountName(w http.ResponseWriter, r *http.Request) {
 	commentedCount := len(getCommentsByPostUserId(user.ID))
 
 	me := getSessionUser(r)
-	fmap := template.FuncMap{
-		"imageURL": imageURL,
-	}
-	template.Must(template.New("layout.html").Funcs(fmap).ParseFiles(
-		getTemplPath("layout.html"),
-		getTemplPath("user.html"),
-		getTemplPath("posts.html"),
-		getTemplPath("post.html"),
-	)).Execute(w, struct {
+
+	getAccountNameTemplate.Execute(w, struct {
 		Posts          []Post
 		User           User
 		PostCount      int
@@ -514,14 +491,7 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmap := template.FuncMap{
-		"imageURL": imageURL,
-	}
-
-	template.Must(template.New("posts.html").Funcs(fmap).ParseFiles(
-		getTemplPath("posts.html"),
-		getTemplPath("post.html"),
-	)).Execute(w, posts)
+	getPostsTemplate.Execute(w, posts)
 }
 
 func getPostsID(w http.ResponseWriter, r *http.Request) {
@@ -554,15 +524,7 @@ func getPostsID(w http.ResponseWriter, r *http.Request) {
 
 	me := getSessionUser(r)
 
-	fmap := template.FuncMap{
-		"imageURL": imageURL,
-	}
-
-	template.Must(template.New("layout.html").Funcs(fmap).ParseFiles(
-		getTemplPath("layout.html"),
-		getTemplPath("post_id.html"),
-		getTemplPath("post.html"),
-	)).Execute(w, struct {
+	getPostsIDTemplate.Execute(w, struct {
 		Post Post
 		Me   User
 	}{p, me})
@@ -730,10 +692,7 @@ func getAdminBanned(w http.ResponseWriter, r *http.Request) {
 		return b.ID - a.ID
 	})
 
-	template.Must(template.ParseFiles(
-		getTemplPath("layout.html"),
-		getTemplPath("banned.html")),
-	).Execute(w, struct {
+	getAdminBannedTemplate.Execute(w, struct {
 		Users     []User
 		Me        User
 		CSRFToken string
