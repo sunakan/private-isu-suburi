@@ -1,17 +1,45 @@
-#
-# The MySQL database server configuration file.
-#
-# One can use all long options that the program supports.
-# Run program with --help to get a list of available options and with
-# --print-defaults to see which it would actually understand and use.
-#
-# For explanations see
-# http://dev.mysql.com/doc/mysql/en/server-system-variables.html
-
-# Here is entries for some specific programs
-# The following values assume you have at least 32M ram
+# コピペ用
+# mysqld.cnfの****に関して、以下の項目付いてそれぞれ教えて下さい
+#  - documentのリンク
+#  - デフォルト値
+#  - 設定の説明
+#  - 設定した場合のメリデメ
+#  - パフォーマンス観点からの説明の詳細
+#  - メモリが潤沢にある場合の業務でのおすすめの設定値
+#  - メモリが潤沢にある場合のisuconでのおすすめの設定値
+#  - isuconでのおすすめの設定値の理由
+#  - isuconでのおすすめの設定値のメリデメ
+#  - isuconでのおすすめの設定値による期待できる効果
 
 [mysqld]
+
+# default_authentication_plugin
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/server-system-variables.html#sysvar_default_authentication_plugin
+# システム変数: default_authentication_plugin
+# スコープ: グローバル
+# 動的: いいえ
+# SET_VAR ヒントの適用: いいえ
+# 型: 列挙
+# デフォルト値: caching_sha2_password
+# 有効な値:
+# - mysql_native_password
+# - sha256_password
+# - caching_sha2_password
+#
+# デフォルト
+# MySQL 8.0以降：caching_sha2_password
+# MySQL 5.7以前：mysql_native_password
+#
+# caching_sha2_passwordを使用することで、より安全なパスワード暗号化が可能
+# キャッシュを使用して認証処理を高速化
+# caching_sha2_passwordは、初回認証後にパスワードハッシュをメモリにキャッシュするため、2回目以降の認証が高速化
+#
+# isucon観点でのおすすめ: mysql_native_password
+# caching_sha2_passwordと比較してセキュリティレベルが若干低下するが、isuconはあまり関係ない
+# 認証に関する潜在的な問題を回避し、パフォーマンスチューニングに集中できるようにする
+# default_authentication_plugin=mysql_native_password
+
 #
 # * Basic Settings
 #
@@ -20,59 +48,626 @@ user		= mysql
 # socket	= /var/run/mysqld/mysqld.sock
 # port		= 3306
 # datadir	= /var/lib/mysql
-
-
-# If MySQL is running as a replication slave, this should be
-# changed. Ref https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_tmpdir
-# tmpdir		= /tmp
-#
-# Instead of skip-networking the default is now to listen only on
-# localhost which is more compatible and is not less secure.
 bind-address		= 0.0.0.0
 mysqlx-bind-address	= 0.0.0.0
+
 #
 # * Fine Tuning
 #
+
+
+# key_buffer_size
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/server-system-variables.html#sysvar_key_buffer_size
+# コマンド行形式: --key-buffer-size=#
+# システム変数: key_buffer_size
+# スコープ: グローバル
+# 動的: はい
+# SET_VAR ヒントの適用: いいえ
+# 型: Integer
+# デフォルト値: 8388608(8MiB)
+# 最小値: 8
+# 最大値 (64 ビットプラットフォーム): OS_PER_PROCESS_LIMIT
+# 最大値 (32 ビットプラットフォーム): 4294967295
+#
+# MyISAMテーブルのインデックスブロックに使用されるバッファのサイズを指定
+#
+# MyISAMテーブルのインデックス読み取り性能が向上
+# ディスクIOが減少
+# 大きすぎる値を設定するとメモリの無駄遣い
+# InnoDBを主に使用する環境では効果が限定的
+# key_buffer_sizeを適切に設定することで、MyISAMテーブルのインデックス読み取りが高速化
+# ただし、現代のMySQLではInnoDBが主流のため、MyISAMテーブルが少ない環境では効果が限定的
+#
+# isuconでのおすすめ: MyISAMを利用している場合は、全体メモリの25~30%程度
+# isuconでのおすすめ: InnoDBを利用している場合は、16Mを利用(設定ファイルに最初から記述されている、デフォでも良い)
 key_buffer_size		= 16M
-# max_allowed_packet	= 64M
-# thread_stack		= 256K
 
-# thread_cache_size       = -1
+# max_allowed_packet
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/server-system-variables.html#max_allowed_packet
+# コマンド行形式: --max-allowed-packet=#
+# システム変数: max_allowed_packet
+# スコープ: グローバル、セッション
+# 動的: はい
+# SET_VAR ヒントの適用: いいえ
+# 型: Integer
+# デフォルト値: 67108864(64MiB)
+# 最小値: 1024
+# 最大値: 1073741824
+#
+# MySQLサーバーとクライアント間で転送可能な最大パケットサイズを指定
+# 大きなクエリや大きなBLOBデータの処理が可能
+# ER_NET_PACKET_TOO_LARGEエラーを回避可能
+# 必要以上に大きな値を設定するとメモリの無駄遣いになる可能性
+#
+# isuconでのおすすめ: 64~128M
+max_allowed_packet = 64M
 
-# This replaces the startup script and checks MyISAM tables if needed
-# the first time they are touched
-myisam-recover-options  = BACKUP
+# thread_stack
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/server-system-variables.html#thread_stack
+# コマンド行形式: --thread-stack=#
+# システム変数: thread_stack
+# スコープ: グローバル
+# 動的: いいえ
+# SET_VAR ヒントの適用: いいえ
+# 型: Integer
+# デフォルト値 (64 ビットプラットフォーム): 286720
+# デフォルト値 (32 ビットプラットフォーム): 221184
+# 最小値: 131072
+# 最大値 (64 ビットプラットフォーム): 18446744073709551615
+# 最大値 (32 ビットプラットフォーム): 4294967295
+# ブロックサイズ: 1024
+#
+# デフォルト値
+# 64ビットプラットフォーム、MySQL 8.0.27以降: 1048576（1MB）
+# 64ビットプラットフォーム、MySQL 8.0.26以前: 286720（約280KB）
+# 32ビットプラットフォーム、MySQL 8.0.27以降: 1048576（1MB）
+# 32ビットプラットフォーム、MySQL 8.0.27以前: 221184（約216KB）
+#
+# 各スレッドのスタックサイズを指定
+# スタックはスレッドがローカル変数を格納するために使用するメモリ領域
+# 複雑なSQLステートメントやストアドプロシージャの実行が可能
+# スタックオーバーフローエラーを防ぐ
+# 大きすぎる値を設定するとメモリの無駄遣いになる可能性
+# thread_stackサイズが小さすぎると、サーバーが処理できるSQLステートメントの複雑さ、ストアドプロシージャの再帰の深さ、その他のメモリを消費するアクションが制限される
+# 適切なサイズを設定することで、複雑なクエリやストアドプロシージャの実行が可能になり、パフォーマンスが向上する可能性
+#
+# isuconでのおすすめ: 256K~1M or デフォルト
+thread_stack= 256K
 
-# max_connections        = 151
+# thread_cache_size
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/server-system-variables.html#sysvar_thread_cache_size
+# コマンド行形式: --thread-cache-size=#
+# システム変数: thread_cache_size
+# スコープ: グローバル
+# 動的: はい
+# SET_VAR ヒントの適用: いいえ
+# 型: Integer
+# デフォルト値: -1 (自動サイズ設定を示します。このリテラル値を割り当てないでください)
+# 最小値: 0
+# 最大値: 16384
+#
+# 再利用のためにキャッシュするスレッドの数
+# クライアントが切断すると、そのクライアントのスレッドはキャッシュに格納される
+# 新しい接続のためのスレッド作成回数を減らせる
+# 設定値が大きすぎると、メモリの無駄遣いになる可能性
+# thread_cache_sizeを適切に設定することで、新しい接続のたびにスレッドを作成する必要がなくなり、接続処理が高速化
+# メモリが潤沢にある場合のisuconでのおすすめの設定値: 50〜100程
+#
+# isuconでのおすすめ: 50~100
+thread_cache_size = 100
 
-# table_open_cache       = 4000
+# myisam-recover-options
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/server-system-variables.html#sysvar_myisam_recover_options
+# コマンド行形式: --myisam-recover-options[=list]
+# システム変数: myisam_recover_options
+# スコープ: グローバル
+# 動的: いいえ
+# SET_VAR ヒントの適用: いいえ
+# 型: 列挙
+# デフォルト値: OFF
+# 有効な値:
+# OFF
+# DEFAULT
+# BACKUP
+# FORCE
+# QUICK
+#
+# MyISAMテーブルのリカバリモードを指定
+# サーバーがMyISAMテーブルを開くたびに、クラッシュしたか、または正しく閉じられなかったかどうかをチェックし、必要に応じて修復を試みる
+#
+# isuconでのおすすめ: デフォルト(OFF)
+#myisam-recover-options = BACKUP
+
+# max_connections
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/server-system-variables.html#max_connections
+# コマンド行形式: --max-connections=#
+# システム変数: max_connections
+# スコープ: グローバル
+# 動的: はい
+# SET_VAR ヒントの適用: いいえ
+# 型: Integer
+# デフォルト値: 151
+# 最小値: 1
+# 最大値: 100000
+#
+# max_connectionsを増やすと、各接続がメモリを消費するため、全体的なメモリ使用量が増加
+# ただし、アイドル状態の接続は比較的少ないリソースしか使用しない
+# パフォーマンスに大きく影響するのは、アクティブな接続数（実際にクエリを実行している接続数）
+# 値を増やすと、同時に多数のリクエストを処理できる
+#
+# isuconでのおすすめ: 1000~2000
+max_connections = 1500
+
+# table_open_cache
+#
+# コマンド行形式: --table-open-cache=#
+# システム変数: table_open_cache
+# スコープ: グローバル
+# 動的: はい
+# SET_VAR ヒントの適用: いいえ
+# 型: Integer
+# デフォルト値: 4000
+# 最小値: 1
+# 最大値: 524288
+#
+# デフォルト値
+# MySQL 8.0: 4000
+# MySQL 5.7: 2000
+#
+# 同時にオープンできるテーブルの数
+# 各クライアント接続はテーブルキャッシュを使用
+# table_open_cacheを適切に設定することで、テーブルのオープン/クローズ操作が減少し、クエリ実行時間が短縮
+# ただし、設定値が大きすぎると、メモリ使用量が増加し、システム全体のパフォーマンスに影響を与える可能性
+# テーブルのオープン/クローズ操作が減少し、クエリ実行が高速化
+# 同時接続数が多い状況でも安定したパフォーマンスを維持
+# Opened_tables状態変数の値が低く抑えられ、全体的なパフォーマンスが向上
+# isuconでのおすすめ: max_connections * (1クエリで使用する最大テーブル数) or 脳死で5000~10000
+table_open_cache = 10000
+
+
+
+#
+# 15.14 InnoDB の起動オプションおよびシステム変数
+# https://dev.mysql.com/doc/refman/8.0/ja/innodb-parameters.html
+#
+
+# innodb_doublewrite
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/innodb-parameters.html#sysvar_innodb_doublewrite
+# コマンド行形式: --innodb-doublewrite[={OFF|ON}]
+# システム変数: innodb_doublewrite
+# スコープ: グローバル
+# 動的: いいえ
+# SET_VAR ヒントの適用: いいえ
+# 型: Boolean
+# デフォルト値: ON
+#
+# innodb_doublewrite 変数は、二重書込みバッファを有効にするかどうかを制御
+# ほとんどの場合、デフォルトで有効
+# 二重書き込みバッファは、InnoDBがバッファプールからフラッシュされたページをデータファイルに書き込む前に一時的に保存する領域
+# 二重書込みバッファを無効にするには、innodb_doublewrite を 0 に設定するか、--skip-innodb-doublewrite でサーバーを起動
+# たとえば、ベンチマークの実行時などのように、データ整合性よりもパフォーマンスに関心がある場合は、二重書込みバッファを無効にする
+# 設定した場合、クラッシュリカバリ時のデータ整合性を向上
+# 設定した場合、予期せぬシステム終了時のデータ損失リスクを軽減
+# OFFにすることで、わずかにIO操作が減少
+# isuconでのおすすめ: 0
+innodb_doublewrite = 0
+
+# innodb_buffer_pool_size
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/innodb-parameters.html#sysvar_innodb_buffer_pool_size
+# コマンド行形式: --innodb-buffer-pool-size=#
+# システム変数: innodb_buffer_pool_size
+# スコープ: グローバル
+# 動的: はい
+# SET_VAR ヒントの適用: いいえ
+# 型: Integer
+# デフォルト値: 134217728(128MiB)
+# 最小値: 5242880
+# 最大値 (64 ビットプラットフォーム): 2**64-1
+# 最大値 (32 ビットプラットフォーム): 2**32-1
+#
+# InnoDB がテーブルのデータとインデックスのデータをキャッシュするメモリー領域であるバッファープールのサイズ (バイト単位)
+# バッファプールを大きくすると、同じテーブルデータに複数回アクセスするために必要なディスクIOが少なくなる
+# innodb_buffer_pool_sizeはInnoDBのパフォーマンスに最も影響を与える設定の1つ
+# データベース専用サーバーでは、バッファプールサイズをマシンの物理メモリーサイズの 75~80% に設定をおすすめ
+# ミスると、物理メモリーの競合により、OSでページングが発生する可能性
+# InnoDB では、バッファおよび制御構造体用に追加のメモリーが予約されるため、割り当てられる領域の合計は、指定されたバッファプールサイズよりも約 10% 大きくなる
+# バッファープールのアドレス空間は連続している必要がある。これは、特定のアドレスで DLL をロードする Windows システムで問題になる可能性
+# isuconでのおすすめ: 物理メモリの75~80%(4GBの場合、3GB~3.2GB)
+innodb_buffer_pool_size = 1GB
+
+# innodb_flush_log_at_trx_commit
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/innodb-parameters.html#sysvar_innodb_flush_log_at_trx_commit
+# コマンド行形式: --innodb-flush-log-at-trx-commit=#
+# システム変数: innodb_flush_log_at_trx_commit
+# スコープ: グローバル
+# 動的: はい
+# SET_VAR ヒントの適用: いいえ
+# 型: 列挙
+# デフォルト値: 1
+# 有効な値:
+# 0
+# 1
+# 2
+#
+# commit 操作に対する厳密な ACID コンプライアンスと、コミット関連の I/O 操作がバッチで再配置および実行される場合に可能なパフォーマンスのバランスを制御
+# デフォルト値を変更することでパフォーマンスを向上できるが、クラッシュ時にトランザクションが失われる可能性がある
+# 0: ログは 1 秒に 1 回書き込まれ、ディスクにフラッシュ。 ログがフラッシュされていないトランザクションはクラッシュ時に失われる可能性有り
+# 1: ACID に完全に準拠。ログはトランザクションのコミットごとにディスクに書き込まれ、フラッシュ
+# 2: 各トランザクションのコミット後にログが書き込まれ、1 秒に 1 回ディスクにフラッシュ。ログがフラッシュされていないトランザクションはクラッシュ時に失われる可能性
+#
+# 2は1秒にディスクにフラッシュ
+# 0にすると、ログ吐きも1秒に1回になる
+# 1: データの耐久性が最大
+# 0,2: パフォーマンス向上
+# 0: 最も高速、クラッシュ時に最大1秒分のトランザクションが失われる可能性
+# isuconでのおすすめ: 0
+innodb_flush_log_at_trx_commit = 0
+
+# innodb_flush_method
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/innodb-parameters.html#sysvar_innodb_flush_method
+# コマンド行形式: --innodb-flush-method=value
+# システム変数: innodb_flush_method
+# スコープ: グローバル
+# 動的: いいえ
+# SET_VAR ヒントの適用: いいえ
+# 型: 文字列
+# デフォルト値 (Unix): fsync
+# デフォルト値 (Windows): unbuffered
+# 有効な値 (Unix):
+# fsync
+# O_DSYNC
+# littlesync
+# nosync
+# O_DIRECT
+# O_DIRECT_NO_FSYNC
+# 有効な値 (Windows):
+# unbuffered
+# normal
+#
+# InnoDB data files および log files への flush データに使用される方法を定義
+# IO スループットに影響する可能性
+# fsync または 0: InnoDB は、fsync() システムコールを使用して、データファイルとログファイルの両方をフラッシュ
+# O_DSYNC または 1: InnoDB は、O_SYNC を使用してログファイルをオープンおよびフラッシュし、fsync() を使用してデータファイルをフラッシュ。さまざまな種類の Unix で問題が発生しているため、InnoDB では直接 O_DSYNC が使用されない。
+# littlesync または 2: このオプションは内部パフォーマンステストに使用され、現在はサポートされていない
+# nosync または 3: このオプションは内部パフォーマンステストに使用され、現在はサポートされていない
+# O_DIRECT または 4: InnoDB では、O_DIRECT (または Solaris 上の directio()) を使用してデータファイルを開き、fsync() を使用してデータファイルとログファイルの両方をフラッシュ。 このオプションは、一部の GNU/Linux バージョン、FreeBSD、および Solaris で使用可能
+# O_DIRECT_NO_FSYNC: InnoDB は、I/O,のフラッシュ中に O_DIRECT を使用しますが、書込み操作のたびに fsync() システムコールをスキップ
+#   - MySQL 8.0.14 より前では、この設定は XFS や EXT4 などのファイルシステムには適していない
+#     - これらのファイルシステムでは、fsync() システムコールを使用してファイルシステムメタデータの変更を同期する必要がある
+#     - ファイルシステムのメタデータ変更を同期するためにファイルシステムで fsync() システムコールが必要かどうかがわからない場合は、かわりに O_DIRECT を使用
+#   - MySQL 8.0.14 の時点では、fsync() は、新しいファイルの作成後、ファイルサイズの増加後およびファイルのクローズ後にコールされ、ファイルシステムメタデータの変更が確実に同期
+#     - 各書込み操作の後も、fsync() システムコールはスキップ
+#     - redo ログファイルとデータファイルが異なるストレージデバイスに存在し、データファイルの書込みがバッテリバックされていないデバイスキャッシュからフラッシュされる前に予期しない終了が発生した場合、データが失われる可能性がる
+#     - redo ログファイルおよびデータファイルに別の記憶域デバイスを使用する場合、およびデータファイルがバッテリバックアップされていないキャッシュを持つデバイスに存在する場合は、かわりに O_DIRECT を使用
+# innodb_flush_methodを適切に設定することで、I/O操作の効率を向上させ、全体的なデータベースパフォーマンスを改善可能
+# 特にO_DIRECTを使用することで、OSのキャッシュとInnoDBのバッファプール間のダブルバッファリングを回避し、I/O効率を向上させることが可能
+# O_DIRECTを使用することで、OSのキャッシュをバイパスし、InnoDBが直接ディスクとやり取りすることが可能
+# isuconでのおすすめ: O_DIRECT_NO_FSYNC or O_DIRECT
+innodb_flush_method = O_DIRECT_NO_FSYNC
+
+
+# innodb_file_per_table
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/innodb-parameters.html#sysvar_innodb_file_per_table
+# コマンド行形式: --innodb-file-per-table[={OFF|ON}]
+# システム変数: innodb_file_per_table
+# スコープ: グローバル
+# 動的: はい
+# SET_VAR ヒントの適用: いいえ
+# 型: Boolean
+# デフォルト値: ON
+#
+# innodb_file_per_table が有効な場合、テーブルはデフォルトで file-per-table テーブルスペースに作成される
+# 無効にすると、デフォルトでシステムテーブルスペースにテーブルが作成される
+# 各テーブルを個別のファイル（.ibd）に格納するかどうかを制御
+# ONの場合、各テーブルが独自のテーブルスペースファイルに格納
+# OFFの場合、すべてのテーブルがシステムテーブルスペースに格納
+# innodb_file_per_tableをONにすると、テーブルごとに独立したファイルIOが可能になり、特定のテーブルへのアクセスが集中する場合にパフォーマンスが向上する可能性がある
+# また、テーブルの切り捨てや削除時のパフォーマンスも向上
+innodb_file_per_table=ON
+
+# innodb_io_capacity
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/innodb-parameters.html#innodb_io_capacity
+# コマンド行形式: --innodb-io-capacity=#
+# システム変数: innodb_io_capacity
+# スコープ: グローバル
+# 動的: はい
+# SET_VAR ヒントの適用: いいえ
+# 型: Integer
+# デフォルト値: 200
+# 最小値: 100
+# 最大値 (64 ビットプラットフォーム): 2**64-1
+# 最大値 (32 ビットプラットフォーム): 2**32-1
+#
+# InnoDB が1秒あたりに実行できるI/O操作の数を定義
+# バックグラウンドタスク（ダーティページのフラッシングや変更バッファからのデータマージなど）のIO帯域幅を制御
+# InnoDBのバックグラウンドI/O操作の速度を制御
+# 高すぎる値はバッファプールからのデータ削除が早すぎる原因となる
+# 低すぎる値はバックグラウンドタスクの遅延を引き起こす可能性
+# SSDを利用しているisuconでのおすすめ: 5000〜10000
+innodb_io_capacity = 10000
+
+# innodb_read_io_threads
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/innodb-parameters.html#sysvar_innodb_read_io_threads
+# コマンド行形式: --innodb-read-io-threads=#
+# システム変数: innodb_read_io_threads
+# スコープ: グローバル
+# 動的: いいえ
+# SET_VAR ヒントの適用: いいえ
+# 型: Integer
+# デフォルト値: 4
+# 最小値: 1
+# 最大値: 64
+#
+# InnoDB での読み取り操作で使用される IO スレッドの数
+# 各バックグラウンドスレッドは最大256の保留中のI/O要求を処理可能
+# ハイエンドIOサブシステムで64 × innodb_read_io_threads以上の保留中の読み取り要求がある場合、値を増やすことでパフォーマンス向上
+# isuconでのおすすめ: 4(デフォルト、2コアだから)
+innodb_read_io_threads = 4
+
+# innodb_write_io_threads
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/innodb-parameters.html#innodb_write_io_threads
+# コマンド行形式: --innodb-write-io-threads=#
+# システム変数: innodb_write_io_threads
+# スコープ: グローバル
+# 動的: いいえ
+# SET_VAR ヒントの適用: いいえ
+# 型: Integer
+# デフォルト値: 4
+# 最小値: 1
+# 最大値: 64
+#
+# InnoDB の書き込み操作で使用される IO スレッドの数
+# 各バックグラウンドスレッドは最大256の保留中のIO要求を処理可能
+# 書き込み集中型のワークロードでは、この値を増やすことでパフォーマンス向上する可能性がある
+# isuconでのおすすめ: 4(デフォルト、2コアだから)
+innodb_write_io_threads = 4
+
+# innodb_log_buffer_size
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/innodb-parameters.html#sysvar_innodb_log_buffer_size
+# コマンド行形式: --innodb-log-buffer-size=#
+# システム変数: innodb_log_buffer_size
+# スコープ: グローバル
+# 動的: はい
+# SET_VAR ヒントの適用: いいえ
+# 型: Integer
+# デフォルト値: 16777216(16MiB)
+# 最小値: 1048576
+# 最大値: 4294967295
+#
+# InnoDBがログファイルに書き込むためのバッファサイズを指定
+# このバッファは、ディスクへのフラッシュ前にログデータを一時的に保持
+# innodb_log_buffer_sizeを適切に設定することで、大きなトランザクションの実行時にディスクIOを削減し、パフォーマンスを向上させることが可能
+# 特に、大量の挿入、更新、削除操作を含むトランザクションがある場合に効果的
+# isuconでのおすすめ: 64~128MiB
+innodb_log_buffer_size = 16MB
+
+# innodb_log_file_size
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/innodb-parameters.html#sysvar_innodb_log_file_size
+# コマンド行形式: --innodb-log-file-size=#
+# システム変数: innodb_log_file_size
+# スコープ: グローバル
+# 動的: いいえ
+# SET_VAR ヒントの適用: いいえ
+# 型: Integer
+# デフォルト値: 50331648(48MiB)
+# 最小値: 4194304(4MiB)
+# 最大値: 512GB / innodb_log_files_in_group
+#
+# InnoDBのログファイルのサイズを指定
+# このログファイルは、クラッシュリカバリやトランザクションのロールバックに使用される
+# 大きな値を設定すると、ディスクI/Oが減少し、パフォーマンスが向上
+# 大規模なトランザクションの処理が容易
+# 大きすぎる値を設定すると、クラッシュ後の回復時間が長くなる
+# 設定変更後にMySQLの再起動が必要
+# innodb_log_file_sizeを大きくすると、チェックポイントの頻度が減少し、ディスクI/Oが削減される
+# これにより、特に書き込みが多いワークロードでパフォーマンスが向上
+# isuconでのおすすめ: innodb_buffer_pool_sizeの25%〜50%程度
+innodb_log_file_size = 256M
+
+# innodb_sort_buffer_size
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/innodb-parameters.html#sysvar_innodb_sort_buffer_size
+# コマンド行形式: --innodb-sort-buffer-size=#
+# システム変数: innodb_sort_buffer_size
+# スコープ: グローバル
+# 動的: いいえ
+# SET_VAR ヒントの適用: いいえ
+# 型: Integer
+# デフォルト値: 1048576
+# 最小値: 65536
+# 最大値: 67108864
+#
+# InnoDBインデックス作成時に使用されるソートバッファのサイズを指定
+# このバッファは、インデックス作成時にデータをソートするために使用
+# innodb_sort_buffer_sizeを適切に設定することで、インデックス作成時のパフォーマンスが向上
+# 特に大規模なテーブルに対してインデックスを作成する際に効果を発揮
+# ただし、この設定はインデックス作成時にのみ使用されるため、通常のクエリ実行には影響無し
+# 通常のクエリ実行に関係有る項目はsort_buffer_size
+# isuconでのおすすめ: 2~4MiB
+innodb_sort_buffer_size = 2M
+
+# sort_buffer_size
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/server-system-variables.html#sort_buffer_size
+# コマンド行形式: --sort-buffer-size=#
+# システム変数: sort_buffer_size
+# スコープ: グローバル、セッション
+# 動的: はい
+# SET_VAR ヒントの適用: はい
+# 型: Integer
+# デフォルト値: 262144(256KiB)
+# 最小値: 32768
+# 最大値 (Windows): 4294967295
+# 最大値 (その他, 64 ビットプラットフォーム): 18446744073709551615
+# 最大値 (その他, 32 ビットプラットフォーム): 4294967295
+#
+# ソートを実行する必要がある各セッションは、このサイズのバッファを割り当てる
+# sort_buffer_size はどのストレージエンジンにも固有ではなく、最適化の一般的な方法で適用される
+# 必要以上に大きく設定すると、ソートを実行するほとんどのクエリーがグローバルに遅くなります
+# Linux の場合、256K バイトおよび 2M バイトのしきい値があり、それより大きい値にするとメモリー割り当てが著しく低速になるため、これらのいずれかの値より低くすることを検討するべき
+# ORDER BYやGROUP BY操作を行う際に使用されるバッファのサイズを指定
+# このバッファは各セッションに割り当てられます。
+# sort_buffer_sizeを適切に設定することで、ORDER BYやGROUP BY操作のパフォーマンスが向上する可能性がある
+# ただし、大きすぎる値を設定すると、メモリ割り当ての遅延やメモリの無駄遣いにつながる可能性がある
+# デフォルト値よりも大きく設定することで、ソート操作のパフォーマンスを向上させる
+# Linuxの2MB閾値を超えないようにする
+# ORDER BYやGROUP BY操作を含むクエリの実行速度向上
+# isuconでのおすすめ: 256K or 1~2M
+sort_buffer_size = 256K
+
+# innodb_buffer_pool_instances
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/innodb-parameters.html#sysvar_innodb_buffer_pool_instances
+# コマンド行形式: --innodb-buffer-pool-instances=#
+# システム変数: innodb_buffer_pool_instances
+# スコープ: グローバル
+# 動的: いいえ
+# SET_VAR ヒントの適用: いいえ
+# 型: Integer
+# デフォルト値 (Windows, 32 ビットプラットフォーム): (autosized)
+# デフォルト値 (その他): 8 (or 1 if innodb_buffer_pool_size < 1GB
+# 最小値: 1
+# 最大値: 64
+#
+# InnoDBバッファプールを分割するインスタンスの数
+# 複数のインスタンスを設定することで、異なるスレッドがキャッシュされたページに同時にアクセスする際の競合が減少し、並列性が向上
+# isuconでのおすすめ: 1 or コア数
+innodb_buffer_pool_instances = 1
+
+# innodb_change_buffer_max_size
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/innodb-parameters.html#sysvar_innodb_change_buffer_max_size
+# コマンド行形式: --innodb-change-buffer-max-size=#
+# システム変数: innodb_change_buffer_max_size
+# スコープ: グローバル
+# 動的: はい
+# SET_VAR ヒントの適用: いいえ
+# 型: Integer
+# デフォルト値: 25
+# 最小値: 0
+# 最大値: 50
+#
+# 変更バッファの最大サイズをバッファプールの合計サイズに対する割合として指定
+# 25なら25%
+# 変更バッファリングは、IO集中型のワークロード（大量のDML操作など）で最も効果的
+# ディスク読み取りと書き込みを減らすことができますが、バッファプールの一部を占有する
+# isuconでのおすすめ: 35
+innodb_change_buffer_max_size = 35
+
+# innodb_flush_neighbors
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/innodb-parameters.html#sysvar_innodb_flush_neighbors
+# コマンド行形式: --innodb-flush-neighbors=#
+# システム変数: innodb_flush_neighbors
+# スコープ: グローバル
+# 動的: はい
+# SET_VAR ヒントの適用: いいえ
+# 型: 列挙
+# デフォルト値: 0
+# 有効な値:
+# 0
+# 1
+# 2
+#
+# 0: innodb_flush_neighbors が無効
+# 1: 連続したダーティページが同じエクステントにフラッシュされる
+# 2: ダーティページが同じエクステントでフラッシュされる
+# HDDでは隣接するページを一度にフラッシュすることでシーク操作を減らし、I/Oパフォーマンス向上
+# SSDではシーク時間が重要ではないため、0に設定して書き込み操作を分散させる方が効果的
+# isuconでのおすすめ: 0
+innodb_flush_neighbors = 0
+
+# read_rnd_buffer_size
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/server-system-variables.html#read_rnd_buffer_size
+# コマンド行形式: --read-rnd-buffer-size=#
+# システム変数: read_rnd_buffer_size
+# スコープ: グローバル、セッション
+# 動的: はい
+# SET_VAR ヒントの適用: はい
+# 型: Integer
+# デフォルト値: 262144(256KiB)
+# 最小値: 1
+# 最大値: 2147483647
+#
+# ソート後に、ソートされた順序で行を読み取る際に使用されるバッファのサイズを指定
+# ORDER BYを含む多くのクエリを使用する場合、この値を増やすとパフォーマンスが向上する可能性がある
+# read_rnd_buffer_sizeを適切に設定することで、ORDER BY操作や複数範囲の読み取りクエリのパフォーマンスが向上
+# ただし、このバッファは各クライアント接続に割り当てられるため、グローバル変数として大きな値を設定するのではなく、必要なクライアントのセッション変数として設定することが推奨される
+# isuconでのおすすめ: 524288バイト（512KB）〜2MB程度
+read_rnd_buffer_size = 2M
+
+# key_buffer_size
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/server-system-variables.html#key_buffer_size
+# コマンド行形式: --key-buffer-size=#
+# システム変数: key_buffer_size
+# スコープ: グローバル
+# 動的: はい
+# SET_VAR ヒントの適用: いいえ
+# 型: Integer
+# デフォルト値: 8388608(8MiB)
+# 最小値: 8
+# 最大値 (64 ビットプラットフォーム): OS_PER_PROCESS_LIMIT
+# 最大値 (32 ビットプラットフォーム): 4294967295
+#
+# 値を増やすことで、すべての読み取りおよび複数の書き込みのインデックス処理を改善できます
+# システムの主な機能が MyISAM ストレージエンジンを使用して MySQL を実行する場合、マシンの合計メモリーの 25% がこの変数の許容可能な値
+# ただし、値を大きくし過ぎると (マシンの合計メモリーの 50% 超)、システムのページングが始まってきわめて低速になることがある
+# - key_reads / key_read_requestsの比率を0.01未満に保つべき
+# - key_writes / key_write_requestsの比率も1未満に保つべき
+#
+# (MyISAMがメイン)isuconでのおすすめ: サーバー全体のメモリの25%程度
+# (InnoDBがメイン)isuconでのおすすめ: 64KB~2MB
+key_buffer_size = 1MB
+
+# innodb_log_writer_threads
+#
+# docs: https://dev.mysql.com/doc/refman/8.0/ja/innodb-parameters.html#sysvar_innodb_log_writer_threads
+# コマンド行形式: --innodb-log-writer-threads[={OFF|ON}]
+# 導入: 8.0.22
+# システム変数: innodb_log_writer_threads
+# スコープ: グローバル
+# 動的: はい
+# SET_VAR ヒントの適用: いいえ
+# 型: Boolean
+# デフォルト値: ON
+#
+# ログバッファからシステムバッファに redo ログレコードを書き込み、システムバッファを redo ログファイルにフラッシュするための専用のログライタースレッドを有効
+# 専用ログライタースレッドを使用すると、同時実行性の高いシステムのパフォーマンスを向上
+# しかし、同時実行性の低いシステムでは、専用ログライタースレッドを無効にすると、パフォーマンス向上
+# CPUコアが少ない場合はOFF
+innodb_log_writer_threads = off
 
 #
 # * Logging and Replication
 #
-# Both location gets rotated by the cronjob.
-#
-# Log all queries
-# Be aware that this log type is a performance killer.
-# general_log_file        = /var/log/mysql/query.log
-# general_log             = 1
-#
-# Error log - should be very few entries.
-#
 log_error = /var/log/mysql/error.log
-#
-# Here you can see queries with especially long duration
-slow_query_log		= 1
-slow_query_log_file	= /var/log/mysql/mysql-slow.log
+slow_query_log = 1
+slow_query_log_file = /var/log/mysql/mysql-slow.log
 long_query_time = 0
 log-queries-not-using-indexes = ON
-#
-# The following can be used as easy to replay backup logs or for replication.
-# note: if you are setting up a replication slave, see README.Debian about
-#       other settings you may need to change.
-# server-id		= 1
-# log_bin			= /var/log/mysql/mysql-bin.log
-# binlog_expire_logs_seconds	= 2592000
-max_binlog_size   = 100M
-# binlog_do_db		= include_database_name
-# binlog_ignore_db	= include_database_name
+max_binlog_size = 100M
+
+# todo: 8.5.8 InnoDB ディスク I/O の最適化と8.12.3.1 MySQL のメモリーの使用方法
+# https://dev.mysql.com/doc/refman/8.0/ja/optimizing-innodb-diskio.html
+# https://dev.mysql.com/doc/refman/8.0/ja/memory-use.html
+
+# todo: 仕上げ
+# disable-log-bin
