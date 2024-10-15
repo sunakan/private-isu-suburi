@@ -6,10 +6,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"sync/atomic"
 
-	"github.com/jmoiron/sqlx"
 	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
@@ -58,7 +56,6 @@ func deleteImages() {
 var (
 	userCacheById          = cmap.New[*User]()
 	userCacheByAccountName = cmap.New[*User]()
-	userMutex              sync.Mutex
 	userId                 atomic.Int32
 )
 
@@ -96,34 +93,4 @@ func getUserByAccountName(accountName string) *User {
 func setUserCache(user *User) {
 	userCacheById.Set(strconv.Itoa(user.ID), user)
 	userCacheByAccountName.Set(user.AccountName, user)
-}
-
-type PostCommentCount struct {
-	PostID       int `db:"post_id"`
-	CommentCount int `db:"cnt"`
-}
-
-// map[PostID] = CommentCount
-func getPostCommentCounts(results []Post) (map[int]int, error) {
-	postIds := make([]int, len(results))
-	m := make(map[int]int)
-	for _, p := range results {
-		postIds = append(postIds, p.ID)
-		// コメントが1つもない場合、NULLになるので、初期値: 0をセットしておく
-		m[p.ID] = 0
-	}
-	var postCommentCounts []PostCommentCount
-	query := `select post_id, count(1) as cnt from comments where post_id in (?) group by post_id;`
-	query, args, err := sqlx.In(query, postIds)
-	if err != nil {
-		return nil, err
-	}
-	err = db.Select(&postCommentCounts, query, args...)
-	if err != nil {
-		return nil, err
-	}
-	for _, pcc := range postCommentCounts {
-		m[pcc.PostID] = pcc.CommentCount
-	}
-	return m, nil
 }

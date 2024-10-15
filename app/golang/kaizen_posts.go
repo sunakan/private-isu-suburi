@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"slices"
 	"strconv"
-	"sync"
 	"time"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
@@ -15,7 +14,6 @@ var (
 	postCacheById      = cmap.New[*Post]()
 	postsCacheByUserId = cmap.New[[]*Post]()
 	latestPosts        = []*Post{}
-	postsMutex         sync.Mutex
 )
 
 func initializePostsCache() {
