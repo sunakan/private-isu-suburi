@@ -343,10 +343,24 @@ func postRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	passwordHash := calculatePasshash(accountName, password)
+	query := "INSERT INTO `users` (`account_name`, `passhash`) VALUES (?,?)"
+	result, err := db.Exec(
+		query,
+		accountName,
+		"", // dummy
+	)
+	if err != nil {
+		log.Print(err)
+		return
+	}
 
 	session := getSession(r)
-	uid := incrementUserId()
-	session.Values["user_id"] = uid
+	uid, err := result.LastInsertId()
+	if err != nil {
+		log.Print(err)
+		return
+	}
+	session.Values["user_id"] = int(uid)
 	session.Values["csrf_token"] = secureRandomStr(16)
 	session.Save(r, w)
 

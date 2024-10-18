@@ -94,7 +94,3 @@ func setUserCache(user *User) {
 	userCacheById.Set(strconv.Itoa(user.ID), user)
 	userCacheByAccountName.Set(user.AccountName, user)
 }
-
-func incrementUserId() int {
-	return int(userId.Add(1))
-}
