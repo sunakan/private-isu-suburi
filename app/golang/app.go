@@ -627,7 +627,23 @@ func postComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cid := incrementCommentId()
+	query := "INSERT INTO `comments` (`post_id`, `user_id`, `comment`) VALUES (?,?,?)"
+	result, err := db.Exec(
+		query,
+		postID,
+		me.ID,
+		"", // dummy
+	)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	cid, err := result.LastInsertId()
+	if err != nil {
+		log.Print(err)
+		return
+	}
 
 	post := *(getPostById(postID))
 	setCommentCache(&CommentWithPostUserId{

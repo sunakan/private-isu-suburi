@@ -4,7 +4,6 @@ import (
 	cmap "github.com/orcaman/concurrent-map/v2"
 	"log/slog"
 	"strconv"
-	"sync/atomic"
 	"time"
 )
 
@@ -12,7 +11,6 @@ var (
 	commentsCacheByPostId     = cmap.New[[]*Comment]()
 	commentsCacheByUserId     = cmap.New[[]*Comment]()
 	commentsCacheByPostUserId = cmap.New[[]*Comment]()
-	commentId                 atomic.Int32
 )
 
 type CommentWithPostUserId struct {
@@ -49,7 +47,6 @@ ORDER BY comments.id ASC
 	commentsCacheByPostUserId.Clear()
 	for _, comment := range comments {
 		setCommentCache(comment)
-		commentId.Store(int32(comment.ID))
 	}
 }
 
@@ -111,8 +108,4 @@ func getCommentsByPostUserId(userId int) []*Comment {
 	} else {
 		return []*Comment{}
 	}
-}
-
-func incrementCommentId() int {
-	return int(commentId.Add(1))
 }
