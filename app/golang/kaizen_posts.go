@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"slices"
 	"strconv"
-	"sync/atomic"
 	"time"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
@@ -15,7 +14,6 @@ var (
 	postCacheById      = cmap.New[*Post]()
 	postsCacheByUserId = cmap.New[[]*Post]()
 	latestPosts        = []*Post{}
-	postId             atomic.Int32
 )
 
 func initializePostsCache() {
@@ -39,7 +37,6 @@ ORDER BY posts.id;
 	postsCacheByUserId.Clear()
 	for _, post := range posts {
 		setPostCache(post)
-		postId.Store(int32(post.ID))
 	}
 
 	// 最新20件用のPosts
@@ -129,8 +126,4 @@ func getPosts20OnOrBefore(t time.Time) []*Post {
 		slices.Reverse(posts)
 		return posts
 	}
-}
-
-func incrementPostId() int {
-	return int(postId.Add(1))
 }

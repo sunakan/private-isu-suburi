@@ -571,9 +571,26 @@ func postIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pid := incrementPostId()
+	query := "INSERT INTO `posts` (`user_id`, `mime`, `imgdata`, `body`) VALUES (?,?,?,?)"
+	result, err := db.Exec(
+		query,
+		me.ID,
+		"", // dummy
+		[]byte{},
+		"", // dummy
+	)
+	if err != nil {
+		log.Print(err)
+		return
+	}
 
-	if err := writeImage(int64(pid), mime, filedata); err != nil {
+	pid, err := result.LastInsertId()
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	if err := writeImage(pid, mime, filedata); err != nil {
 		slog.Error("画像書き出しに失敗", err, "post_id", pid, "mime", mime)
 	}
 	post := &Post{
@@ -589,7 +606,7 @@ func postIndex(w http.ResponseWriter, r *http.Request) {
 	cloned = append(cloned, post)[1:21]
 	latestPosts = cloned
 
-	http.Redirect(w, r, "/posts/"+strconv.FormatInt(int64(pid), 10), http.StatusFound)
+	http.Redirect(w, r, "/posts/"+strconv.FormatInt(pid, 10), http.StatusFound)
 }
 
 func postComment(w http.ResponseWriter, r *http.Request) {
