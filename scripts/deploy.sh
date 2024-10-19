@@ -62,3 +62,12 @@ cat tmp/app-servers | xargs -I{} ssh {} "sudo mysql -e \"grant process, replicat
 cat tmp/app-servers | xargs -I{} rsync -az --rsync-path="sudo rsync" ./common/etc/default/prometheus-mysqld-exporter {}:/etc/default/prometheus-mysqld-exporter
 cat tmp/app-servers | xargs -I{} ssh {} "sudo chown prometheus:prometheus /etc/default/prometheus-mysqld-exporter && sudo chmod +r /etc/default/prometheus-mysqld-exporter"
 cat tmp/app-servers | xargs -I{} ssh {} "sudo systemctl restart prometheus-mysqld-exporter"
+
+#
+# Fluent-bit
+#
+echo ''
+echo '-------[ 🚀Deploy Fluent-bit🚀 ]'
+cat tmp/app-servers | xargs -I{} rsync -az --rsync-path="sudo rsync" ./common/etc/fluent-bit/fluent-bit.conf {}:/etc/fluent-bit/fluent-bit.conf
+cat tmp/app-servers | xargs -I{} ssh {} "sudo chown root:root /etc/fluent-bit/fluent-bit.conf && sudo chmod 644 /etc/fluent-bit/fluent-bit.conf"
+cat tmp/app-servers | xargs -I{} ssh {} "sudo systemctl restart fluent-bit"
