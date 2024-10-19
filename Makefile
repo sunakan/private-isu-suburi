@@ -40,6 +40,10 @@ setup-tools: tmp/servers ## 各Hostでツール群をインストール
 	@cat tmp/servers | xargs -I{} ssh {} "sudo apt-get update && sudo apt-get install -y psmisc tmux tree make jq neovim git gv graphviz prometheus-node-exporter"
 	@cat tmp/app-servers | xargs -I{} ssh {} "sudo apt-get update && sudo apt-get install -y prometheus-mysqld-exporter prometheus-nginx-exporter"
 
+.PHONY: install-fluent-bit
+install-fluent-bit: ## fluent-bitをインストール
+	@bash scripts/install-fluent-bit.sh
+
 ################################################################################
 # MySQL
 ################################################################################
