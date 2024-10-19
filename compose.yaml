@@ -17,3 +17,8 @@ services:
       - type: bind
         source: ./tmp/prometheus.yml
         target: /etc/prometheus/prometheus.yml
+  # Loki
+  loki:
+    image: grafana/loki:3.2.1
+    ports:
+      - 3100:3100
