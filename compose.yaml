@@ -8,6 +8,10 @@ services:
     image: grafana/grafana:11.2.2
     ports:
       - 3000:3000
+    volumes:
+      - type: bind
+        source: ${PWD}/plg-stack/grafana/etc/grafana/provisioning/datasources/
+        target: /etc/grafana/provisioning/datasources/
   # https://github.com/prometheus/prometheus/tree/main?tab=readme-ov-file#docker-images
   prometheus:
     image: prom/prometheus:v2.54.1
