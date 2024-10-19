@@ -25,6 +25,10 @@ reset: ## app,commonを削除し、beforeシリーズからもってくる
 	@cp -rf before-app app
 	@cp -rf before-common common
 
+.PHONY: port-forward-for-isu-1
+port-forward-for-isu-1: ## 別shellで行う:Remote(isu-1)の:3100への接続をLocal:3100へポートフォワーディング(Rオプション)
+	grep 'isu-1' tmp/app-servers &> /dev/null && ssh isu-1 -R 3100:localhost:3100 -N
+
 ################################################################################
 # o11y
 ################################################################################
