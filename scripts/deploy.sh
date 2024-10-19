@@ -51,3 +51,14 @@ cat tmp/app-servers | xargs -I{} rsync -az --rsync-path="sudo rsync" ./common/et
 cat tmp/app-servers | xargs -I{} rsync -az --rsync-path="sudo rsync" ./common/etc/nginx/sites-available/isucon.conf {}:/etc/nginx/sites-available/isucon.conf
 cat tmp/app-servers | xargs -I{} ssh {} 'sudo nginx -t && sudo systemctl reload nginx'
 cat tmp/app-servers | xargs -I{} ssh {} 'sudo chmod +rx /var/log/nginx/ && sudo chmod +r /var/log/nginx/*log'
+
+#
+# Prometheus Exporter の設定群
+#
+echo ''
+echo '-------[ 🚀Deploy Prometheus *** Exporter🚀 ]'
+cat tmp/app-servers | xargs -I{} ssh {} "sudo mysql -e \"create user if not exists 'prometheus'@'localhost' identified by 'prometheus';\""
+cat tmp/app-servers | xargs -I{} ssh {} "sudo mysql -e \"grant process, replication client, select on *.* to 'prometheus'@'localhost';\""
+cat tmp/app-servers | xargs -I{} rsync -az --rsync-path="sudo rsync" ./common/etc/default/prometheus-mysqld-exporter {}:/etc/default/prometheus-mysqld-exporter
+cat tmp/app-servers | xargs -I{} ssh {} "sudo chown prometheus:prometheus /etc/default/prometheus-mysqld-exporter && sudo chmod +r /etc/default/prometheus-mysqld-exporter"
+cat tmp/app-servers | xargs -I{} ssh {} "sudo systemctl restart prometheus-mysqld-exporter"
