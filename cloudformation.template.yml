@@ -1,3 +1,6 @@
+#
+# https://github.com/catatsuy/private-isu?tab=readme-ov-file#ami
+#
 AWSTemplateFormatVersion: '2010-09-09'
 Description: private-isu template
 
