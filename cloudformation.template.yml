@@ -125,3 +125,39 @@ Resources:
     Properties:
       InstanceId: !Ref BenchmarkerInstance
       EIP: !Ref BenchmarkerEIP
+
+
+
+
+      #  ServerInstance2:
+      #    Type: AWS::EC2::Instance
+      #    Properties:
+      #      Tags:
+      #        - Key: Name
+      #          Value: isu-2
+      #      InstanceType: c7g.large
+      #      ImageId: ami-0bed62bba4100a4b7
+      #      SubnetId: !Ref MySubnet
+      #      PrivateIpAddress: '192.168.1.11'
+      #      BlockDeviceMappings:
+      #        - DeviceName: /dev/xvda
+      #          Ebs:
+      #            VolumeSize: 30
+      #            VolumeType: gp3
+      #      SecurityGroupIds:
+      #        - !Ref MySecurityGroup
+      #      UserData:
+      #        Fn::Base64: !Sub |
+      #          #!/bin/bash
+      #          GITHUB_USER=${ENV_GITHUB_USERNAME}
+      #          mkdir -p /home/isucon/.ssh
+      #          curl -s https://github.com/$GITHUB_USER.keys >> /home/isucon/.ssh/authorized_keys
+      #          chown -R isucon:isucon /home/isucon/.ssh
+      #          chmod 600 /home/isucon/.ssh/authorized_keys
+      #  ServerEIP2:
+      #    Type: AWS::EC2::EIP
+      #  ServerEIPAssociation2:
+      #    Type: AWS::EC2::EIPAssociation
+      #    Properties:
+      #      InstanceId: !Ref ServerInstance2
+      #      EIP: !Ref ServerEIP2
