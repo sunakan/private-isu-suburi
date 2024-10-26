@@ -4,7 +4,7 @@
 # ssh configを作成
 #
 mkdir -p ~/.ssh/config-for-isucon.d
-aws ec2 describe-instances --output json --query 'Reservations[].Instances[]' \
+aws ec2 describe-instances --filters 'Name=instance-state-name,Values=running' --output json --query 'Reservations[].Instances[]' \
   | jq -rc '.[] | {ip: .NetworkInterfaces[0].Association.PublicIp, name: .Tags[] | select(.Key == "Name") | .Value}' \
   | jq -src '. | sort_by(.name)[] | ["isu-\(.name | split("-")[1])", .ip] | @csv' \
   | sed 's/"//g' \
