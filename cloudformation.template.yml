@@ -78,7 +78,11 @@ Resources:
         InstanceMarketOptions:
           MarketType: spot
           SpotOptions:
-            SpotInstanceType: one-time
+            #
+            # SpotInstanceType: persistent
+            # `InstanceInterruptionBehavior: stop` を設定するにはpersistent設定が必須だった
+            #
+            SpotInstanceType: persistent
             #
             # InstanceInterruptionBehavior: stopにすることで、回収タイミングになった場合、停止状態に移行
             # AWSによって自動再開された場合はSpotInstanceの特性は維持(安価)
@@ -131,7 +135,11 @@ Resources:
         InstanceMarketOptions:
           MarketType: spot
           SpotOptions:
-            SpotInstanceType: one-time
+            #
+            # SpotInstanceType: persistent
+            # `InstanceInterruptionBehavior: stop` を設定するにはpersistent設定が必須だった
+            #
+            SpotInstanceType: persistent
             #
             # InstanceInterruptionBehavior: stop にすることで、回収タイミングになった場合、停止状態に移行
             # AWSによって自動再開された場合はSpotInstanceの特性は維持(安価)
