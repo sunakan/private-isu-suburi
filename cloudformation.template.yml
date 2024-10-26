@@ -79,7 +79,12 @@ Resources:
           MarketType: spot
           SpotOptions:
             SpotInstanceType: one-time
-            InstanceInterruptionBehavior: terminate
+            #
+            # InstanceInterruptionBehavior: hibernate にすることで、回収タイミングになった場合、休止状態に移行
+            # AWSによって自動再開された場合はSpotInstanceの特性は維持(安価)
+            # 手動起動した場合、SpotInstanceではなくなるため注意
+            #
+            InstanceInterruptionBehavior: hibernate
         UserData:
           Fn::Base64: !Sub |
             #!/bin/bash
@@ -127,7 +132,12 @@ Resources:
           MarketType: spot
           SpotOptions:
             SpotInstanceType: one-time
-            InstanceInterruptionBehavior: terminate
+            #
+            # InstanceInterruptionBehavior: hibernate にすることで、回収タイミングになった場合、休止状態に移行
+            # AWSによって自動再開された場合はSpotInstanceの特性は維持(安価)
+            # 手動起動した場合、SpotInstanceではなくなるため注意
+            #
+            InstanceInterruptionBehavior: hibernate
         UserData:
           Fn::Base64: !Sub |
             #!/bin/bash
