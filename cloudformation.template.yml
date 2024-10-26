@@ -56,6 +56,39 @@ Resources:
         - IpProtocol: -1
           CidrIp: ${ENV_MY_IP}
 
+  IAMFleetRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: spotfleet.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SpotFleetManagement
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeImages
+                  - ec2:DescribeSubnets
+                  - ec2:RequestSpotInstances
+                  - ec2:TerminateInstances
+                  - ec2:DescribeInstanceStatus
+                  - ec2:CreateTags
+                  - ec2:RunInstances
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    iam:PassedToService: ec2.amazonaws.com
+
   #
   # アプリインスタンス
   # - Spot Instanceを利用するためにLaunchTemplateを利用
@@ -68,27 +101,23 @@ Resources:
       LaunchTemplateData:
         ImageId: ami-0bed62bba4100a4b7
         InstanceType: c7g.large
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: isu-1
         BlockDeviceMappings:
           - DeviceName: /dev/sda1
             Ebs:
               VolumeSize: 30
               VolumeType: gp3
-        SecurityGroupIds:
-          - !Ref MySecurityGroup
-        InstanceMarketOptions:
-          MarketType: spot
-          SpotOptions:
-            #
-            # SpotInstanceType: persistent
-            # `InstanceInterruptionBehavior: stop` を設定するにはpersistent設定が必須だった
-            #
-            SpotInstanceType: persistent
-            #
-            # InstanceInterruptionBehavior: stopにすることで、回収タイミングになった場合、停止状態に移行
-            # AWSによって自動再開された場合はSpotInstanceの特性は維持(安価)
-            # 手動起動した場合、SpotInstanceではなくなるため注意
-            #
-            InstanceInterruptionBehavior: stop
+        NetworkInterfaces:
+          - DeviceIndex: 0
+            SubnetId: !Ref MySubnet
+            Groups:
+              - !Ref MySecurityGroup
+            PrivateIpAddress: '192.168.1.10'
+            AssociatePublicIpAddress: true
         UserData:
           Fn::Base64: !Sub |
             #!/bin/bash
@@ -98,23 +127,35 @@ Resources:
             chown -R isucon:isucon /home/isucon/.ssh
             chmod 600 /home/isucon/.ssh/authorized_keys
   ServerInstance:
-    Type: AWS::EC2::Instance
+    Type: AWS::EC2::SpotFleet
     Properties:
-      LaunchTemplate:
-        LaunchTemplateId: !Ref ServerLaunchTemplate
-        Version: !GetAtt ServerLaunchTemplate.LatestVersionNumber
-      SubnetId: !Ref MySubnet
-      PrivateIpAddress: '192.168.1.10'
-      Tags:
-        - Key: Name
-          Value: isu-1
-  ServerEIP:
-    Type: AWS::EC2::EIP
-  ServerEIPAssociation:
-    Type: AWS::EC2::EIPAssociation
-    Properties:
-      InstanceId: !Ref ServerInstance
-      EIP: !Ref ServerEIP
+      SpotFleetRequestConfigData:
+        IamFleetRole: !GetAtt IAMFleetRole.Arn
+        TargetCapacity: 1
+        LaunchTemplateConfigs:
+          - LaunchTemplateSpecification:
+              LaunchTemplateId: !Ref ServerLaunchTemplate
+              Version: !GetAtt ServerLaunchTemplate.DefaultVersionNumber
+            # EC2のオンデマンドの料金
+            # https://aws.amazon.com/jp/ec2/pricing/on-demand/
+            Overrides:
+              - InstanceType: c7g.large # 0.091 USD/h
+        SpotPrice: '0.1'
+        #
+        # AllocationStrategy: インスタンスの割り当て戦略
+        # - priceCapacityOptimized(料金最適化): 料金と中断確率両方を考慮して最適化
+        # - capacityOptimized(キャパシティ最適化): 中断確率が最も低いインスタンスタイプを選択
+        # - lowestPrice(最安値): 最も安価なインスタンスタイプを選択
+        # - diversified(分散): 均等に分散
+        #
+        AllocationStrategy: capacityOptimized
+        #
+        # InstanceInterruptionBehavior: インスタンスの中断動作
+        # - terminate(終了, デフォ): インスタンスを終了
+        # - stop(停止): SpotFleetの場合、リクエストタイプがmaintainの場合のみ有効
+        # - hibernate(休止):
+        #
+        InstanceInterruptionBehavior: stop
 
   #
   # ベンチマーカー
@@ -125,27 +166,23 @@ Resources:
       LaunchTemplateData:
         ImageId: ami-034a457f6af55d65d
         InstanceType: c7g.xlarge
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: isu-bench
         BlockDeviceMappings:
           - DeviceName: /dev/sda1
             Ebs:
               VolumeSize: 30
               VolumeType: gp3
-        SecurityGroupIds:
-          - !Ref MySecurityGroup
-        InstanceMarketOptions:
-          MarketType: spot
-          SpotOptions:
-            #
-            # SpotInstanceType: persistent
-            # `InstanceInterruptionBehavior: stop` を設定するにはpersistent設定が必須だった
-            #
-            SpotInstanceType: persistent
-            #
-            # InstanceInterruptionBehavior: stop にすることで、回収タイミングになった場合、停止状態に移行
-            # AWSによって自動再開された場合はSpotInstanceの特性は維持(安価)
-            # 手動起動した場合、SpotInstanceではなくなるため注意
-            #
-            InstanceInterruptionBehavior: stop
+        NetworkInterfaces:
+          - DeviceIndex: 0
+            SubnetId: !Ref MySubnet
+            Groups:
+              - !Ref MySecurityGroup
+            PrivateIpAddress: '192.168.1.20'
+            AssociatePublicIpAddress: true
         UserData:
           Fn::Base64: !Sub |
             #!/bin/bash
@@ -155,23 +192,20 @@ Resources:
             chown -R isucon:isucon /home/isucon/.ssh
             chmod 600 /home/isucon/.ssh/authorized_keys
   BenchmarkerInstance:
-    Type: AWS::EC2::Instance
+    Type: AWS::EC2::SpotFleet
     Properties:
-      LaunchTemplate:
-        LaunchTemplateId: !Ref BenchmarkerLaunchTemplate
-        Version: !GetAtt BenchmarkerLaunchTemplate.LatestVersionNumber
-      SubnetId: !Ref MySubnet
-      PrivateIpAddress: '192.168.1.20'
-      Tags:
-        - Key: Name
-          Value: isu-bench
-  BenchmarkerEIP:
-    Type: AWS::EC2::EIP
-  BenchmarkerEIPAssociation:
-    Type: AWS::EC2::EIPAssociation
-    Properties:
-      InstanceId: !Ref BenchmarkerInstance
-      EIP: !Ref BenchmarkerEIP
+      SpotFleetRequestConfigData:
+        IamFleetRole: !GetAtt IAMFleetRole.Arn
+        TargetCapacity: 1
+        LaunchTemplateConfigs:
+          - LaunchTemplateSpecification:
+              LaunchTemplateId: !Ref BenchmarkerLaunchTemplate
+              Version: !GetAtt BenchmarkerLaunchTemplate.DefaultVersionNumber
+            Overrides:
+              - InstanceType: c7g.xlarge # 0.1819 USD/h
+        SpotPrice: '0.2'
+        AllocationStrategy: priceCapacityOptimized
+        InstanceInterruptionBehavior: stop
 
       #  ServerInstance2:
       #    Type: AWS::EC2::Instance
