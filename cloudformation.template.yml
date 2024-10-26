@@ -56,6 +56,9 @@ Resources:
         - IpProtocol: -1
           CidrIp: ${ENV_MY_IP}
 
+  #
+  # アプリインスタンス
+  #
   ServerInstance:
     Type: AWS::EC2::Instance
     Properties:
@@ -83,7 +86,17 @@ Resources:
           curl -s https://github.com/$GITHUB_USER.keys >> /home/isucon/.ssh/authorized_keys
           chown -R isucon:isucon /home/isucon/.ssh
           chmod 600 /home/isucon/.ssh/authorized_keys
+  ServerEIP:
+    Type: AWS::EC2::EIP
+  ServerEIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      InstanceId: !Ref ServerInstance
+      EIP: !Ref ServerEIP
 
+  #
+  # ベンチマーカー
+  #
   BenchmarkerInstance:
     Type: AWS::EC2::Instance
     Properties:
@@ -111,19 +124,8 @@ Resources:
           curl -s https://github.com/$GITHUB_USER.keys >> /home/isucon/.ssh/authorized_keys
           chown -R isucon:isucon /home/isucon/.ssh
           chmod 600 /home/isucon/.ssh/authorized_keys
-
-  ServerEIP:
-    Type: AWS::EC2::EIP
-
   BenchmarkerEIP:
     Type: AWS::EC2::EIP
-
-  ServerEIPAssociation:
-    Type: AWS::EC2::EIPAssociation
-    Properties:
-      InstanceId: !Ref ServerInstance
-      EIP: !Ref ServerEIP
-
   BenchmarkerEIPAssociation:
     Type: AWS::EC2::EIPAssociation
     Properties:
