@@ -69,7 +69,7 @@ Resources:
         ImageId: ami-0bed62bba4100a4b7
         InstanceType: c7g.large
         BlockDeviceMappings:
-          - DeviceName: /dev/xvda
+          - DeviceName: /dev/sda1
             Ebs:
               VolumeSize: 30
               VolumeType: gp3
@@ -117,7 +117,7 @@ Resources:
         ImageId: ami-034a457f6af55d65d
         InstanceType: c7g.xlarge
         BlockDeviceMappings:
-          - DeviceName: /dev/xvda
+          - DeviceName: /dev/sda1
             Ebs:
               VolumeSize: 30
               VolumeType: gp3
