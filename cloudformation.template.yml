@@ -58,34 +58,47 @@ Resources:
 
   #
   # アプリインスタンス
+  # - Spot Instanceを利用するためにLaunchTemplateを利用
+  # Spot Fleetを利用していない理由
+  # - Spot FleetではPrivate Ip Addressを事前に指定できなかったため
   #
+  ServerLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: ami-0bed62bba4100a4b7
+        InstanceType: c7g.large
+        BlockDeviceMappings:
+          - DeviceName: /dev/xvda
+            Ebs:
+              VolumeSize: 30
+              VolumeType: gp3
+        SecurityGroupIds:
+          - !Ref MySecurityGroup
+        InstanceMarketOptions:
+          MarketType: spot
+          SpotOptions:
+            SpotInstanceType: one-time
+            InstanceInterruptionBehavior: terminate
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            GITHUB_USER=${ENV_GITHUB_USERNAME}
+            mkdir -p /home/isucon/.ssh
+            curl -s https://github.com/$GITHUB_USER.keys >> /home/isucon/.ssh/authorized_keys
+            chown -R isucon:isucon /home/isucon/.ssh
+            chmod 600 /home/isucon/.ssh/authorized_keys
   ServerInstance:
     Type: AWS::EC2::Instance
     Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref ServerLaunchTemplate
+        Version: !GetAtt ServerLaunchTemplate.LatestVersionNumber
+      SubnetId: !Ref MySubnet
+      PrivateIpAddress: '192.168.1.10'
       Tags:
         - Key: Name
           Value: isu-1
-      InstanceType: c7g.large
-      ImageId: ami-0bed62bba4100a4b7
-      SubnetId: !Ref MySubnet
-      PrivateIpAddress: '192.168.1.10'
-      BlockDeviceMappings:
-        - DeviceName: /dev/xvda
-          Ebs:
-            VolumeSize: 30
-            VolumeType: gp3
-      SecurityGroupIds:
-        - !Ref MySecurityGroup
-      InstanceMarketOptions:
-        MarketType: spot
-      UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash
-          GITHUB_USER=${ENV_GITHUB_USERNAME}
-          mkdir -p /home/isucon/.ssh
-          curl -s https://github.com/$GITHUB_USER.keys >> /home/isucon/.ssh/authorized_keys
-          chown -R isucon:isucon /home/isucon/.ssh
-          chmod 600 /home/isucon/.ssh/authorized_keys
   ServerEIP:
     Type: AWS::EC2::EIP
   ServerEIPAssociation:
@@ -97,33 +110,43 @@ Resources:
   #
   # ベンチマーカー
   #
+  BenchmarkerLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: ami-034a457f6af55d65d
+        InstanceType: c7g.xlarge
+        BlockDeviceMappings:
+          - DeviceName: /dev/xvda
+            Ebs:
+              VolumeSize: 30
+              VolumeType: gp3
+        SecurityGroupIds:
+          - !Ref MySecurityGroup
+        InstanceMarketOptions:
+          MarketType: spot
+          SpotOptions:
+            SpotInstanceType: one-time
+            InstanceInterruptionBehavior: terminate
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            GITHUB_USER=${ENV_GITHUB_USERNAME}
+            mkdir -p /home/isucon/.ssh
+            curl -s https://github.com/$GITHUB_USER.keys >> /home/isucon/.ssh/authorized_keys
+            chown -R isucon:isucon /home/isucon/.ssh
+            chmod 600 /home/isucon/.ssh/authorized_keys
   BenchmarkerInstance:
     Type: AWS::EC2::Instance
     Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref BenchmarkerLaunchTemplate
+        Version: !GetAtt BenchmarkerLaunchTemplate.LatestVersionNumber
+      SubnetId: !Ref MySubnet
+      PrivateIpAddress: '192.168.1.20'
       Tags:
         - Key: Name
           Value: isu-bench
-      InstanceType: c7g.xlarge
-      ImageId: ami-034a457f6af55d65d
-      SubnetId: !Ref MySubnet
-      PrivateIpAddress: '192.168.1.20'
-      BlockDeviceMappings:
-        - DeviceName: /dev/xvda
-          Ebs:
-            VolumeSize: 30
-            VolumeType: gp3
-      SecurityGroupIds:
-        - !Ref MySecurityGroup
-      InstanceMarketOptions:
-        MarketType: spot
-      UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash
-          GITHUB_USER=${ENV_GITHUB_USERNAME}
-          mkdir -p /home/isucon/.ssh
-          curl -s https://github.com/$GITHUB_USER.keys >> /home/isucon/.ssh/authorized_keys
-          chown -R isucon:isucon /home/isucon/.ssh
-          chmod 600 /home/isucon/.ssh/authorized_keys
   BenchmarkerEIP:
     Type: AWS::EC2::EIP
   BenchmarkerEIPAssociation:
@@ -131,9 +154,6 @@ Resources:
     Properties:
       InstanceId: !Ref BenchmarkerInstance
       EIP: !Ref BenchmarkerEIP
-
-
-
 
       #  ServerInstance2:
       #    Type: AWS::EC2::Instance
