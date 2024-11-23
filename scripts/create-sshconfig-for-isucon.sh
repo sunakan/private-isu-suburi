@@ -10,7 +10,7 @@ aws ec2 describe-instances --filters 'Name=instance-state-name,Values=running' -
   | sed 's/"//g' \
   > tmp/hosts.csv
 cat tmp/hosts.csv \
-  | awk -F, '{print "Host "$1"\n  HostName "$2"\n  User isucon\n  IdentityFile ~/.ssh/id_rsa\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null"}' \
+  | awk -F, '{print "Host "$1"\n  HostName "$2"\n  User isucon\n  IdentityFile ~/.ssh/id_rsa\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null\n  LogLevel quiet"}' \
   > ~/.ssh/config-for-isucon.d/config
 chmod 644 ~/.ssh/config-for-isucon.d/config
 echo '~/.ssh/config-for-isucon.d/configを作成しました'
